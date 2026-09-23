@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.26100.0</TargetPlatformMinVersion>
+    <OutputType>WinExe</OutputType>
+    <ApplicationIcon>..\..\assets\Scriblism.ico</ApplicationIcon>
+    <ApplicationManifest>..\Scriblism.App\app.manifest</ApplicationManifest>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <!-- Framework-dependent WinUI: the Windows App SDK comes from the shared MSIX framework
+         package that the bootstrap launcher registers, not from a copy inside every install.
+         Three lism apps each carrying their own 145 MB of it is three copies on disk and, when
+         more than one is open, three copies of the same code pages in memory. .NET itself stays
+         self-contained — that one has no installer we are willing to chain. -->
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <SelfContained>true</SelfContained>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
+    <ProjectReference Include="..\Scriblism.Core\Scriblism.Core.csproj" />
+    <Content Include="..\..\assets\Scriblism.ico" Link="Assets\Scriblism.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\assets\Scriblism.png" Link="Assets\Scriblism.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

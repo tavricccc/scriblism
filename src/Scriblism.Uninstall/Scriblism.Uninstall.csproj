@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <ApplicationIcon>..\..\assets\Scriblism.ico</ApplicationIcon>
+    <ApplicationManifest>..\Scriblism.App\app.manifest</ApplicationManifest>
+    <AssemblyName>Uninstall</AssemblyName>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Scriblism.Core\Scriblism.Core.csproj" />
+  </ItemGroup>
+</Project>

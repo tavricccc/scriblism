@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup>
+  <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+  <OutputType>WinExe</OutputType>
+  <ApplicationIcon>..\..\assets\Scriblism.ico</ApplicationIcon>
+  <AssemblyName>Scriblism.Setup</AssemblyName>
+  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  <SelfContained>true</SelfContained>
+  <!-- One file is the whole point: everything the installer needs travels inside this
+       executable, including its own .NET runtime. Without a self-contained runtime the
+       installer would need .NET already present on a machine that has nothing. -->
+  <PublishSingleFile>true</PublishSingleFile>
+  <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  <!-- Only while debugging: embedded symbols travel inside the assembly, so in Release this
+       would put back exactly what Directory.Build.props strips out. -->
+  <DebugType Condition="'$(Configuration)' != 'Release'">embedded</DebugType>
+  <ApplicationManifest>..\Scriblism.App\app.manifest</ApplicationManifest>
+ </PropertyGroup>
+</Project>

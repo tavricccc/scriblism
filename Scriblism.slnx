@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Scriblism.App/Scriblism.App.csproj" />
+    <Project Path="src/Scriblism.Core/Scriblism.Core.csproj" />
+    <Project Path="src/Scriblism.Setup/Scriblism.Setup.csproj" />
+    <Project Path="src/Scriblism.Uninstall/Scriblism.Uninstall.csproj" />
+    <Project Path="src/Scriblism.Bootstrap/Scriblism.Bootstrap.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Scriblism.Core.Tests/Scriblism.Core.Tests.csproj" />
+  </Folder>
+</Solution>

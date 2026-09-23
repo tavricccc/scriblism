@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-22T13:12:10Z",
+  "title": "Design System: Scriblism",
+  "extensions": {
+    "platform": "Windows WinUI 3",
+    "units": "Windows DIPs; TOM character sizes use points",
+    "themeResources": [
+      "ApplicationPageBackgroundThemeBrush",
+      "LayerFillColorDefaultBrush",
+      "SolidBackgroundFillColorBaseBrush",
+      "SurfaceStrokeColorDefaultBrush",
+      "DividerStrokeColorDefaultBrush",
+      "TextFillColorSecondaryBrush"
+    ],
+    "shadows": [
+      { "name": "native-overlay", "value": "ThemeShadow; Translation=(0,0,24)", "purpose": "Find/replace and toasts only" }
+    ],
+    "motion": [
+      { "name": "native", "value": "WinUI default transitions", "purpose": "Menus, tabs and focus; no custom entrance animation" }
+    ],
+    "breakpoints": [
+      { "name": "compact-sidebar", "value": "780 DIPs" }
+    ],
+    "typographyMeta": {
+      "heading-one": { "purpose": "1.9x document zoom, bold, same foreground as body" },
+      "heading-two": { "purpose": "1.5x document zoom, bold, same foreground as body" },
+      "code": { "purpose": "Source editing and visible logical line numbers" }
+    }
+  },
+  "components": [
+    { "name": "Title-bar tabs", "kind": "nav", "description": "Native WinUI TabView integrated into the extended Windows title bar. Native caption buttons, DPI-aware right inset and an empty caption drag region; no workspace tab row.", "source": "src/Scriblism.App/MainWindow.xaml#TitleBarHost" },
+    { "name": "Native find dropdown", "kind": "custom", "refersTo": "find-panel", "description": "WinUI overlay, not a layout row. Replacement expands inside the same panel.", "source": "src/Scriblism.App/MainWindow.xaml#FindPanel" },
+    { "name": "Status action", "kind": "button", "refersTo": "status-action", "description": "Unfilled native text action for language or Markdown mode.", "source": "src/Scriblism.App/MainWindow.xaml#LanguageButton" },
+    { "name": "Native toast", "kind": "custom", "description": "Bottom-right InfoBar, persistent for warnings/errors and timed for success/information.", "source": "src/Scriblism.App/MainWindow.xaml#Notice" }
+  ],
+  "narrative": {
+    "northStar": "Native Windows editing with an unobstructed document surface",
+    "overview": "Native Windows / Fluent, as requested by the user. The document owns the workspace. Keep Windows controls, system focus behavior and OS materials rather than imitating a web editor.",
+    "rules": [
+      { "name": "Same-color headings", "body": "A Markdown heading inherits the document foreground. Its hierarchy comes from size and weight.", "section": "typography" }
+    ],
+    "dos": [
+      "Do use the OS theme and native control behavior.",
+      "Do preserve editor geometry when opening find/replace or a toast.",
+      "Do keep language/mode controls in the status strip and formatting in menus."
+    ],
+    "donts": [
+      "Don't reintroduce a separate editor toolbar.",
+      "Don't assign accent colors to Markdown headings.",
+      "Don't hide unsaved or conflict decisions in auto-dismissed notifications.",
+      "Don't build a web surface or plug-in marketplace into this editor.",
+      "Don't redraw Windows caption buttons or duplicate the title-bar tabs inside the workspace."
+    ]
+  }
+}

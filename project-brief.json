@@ -1,0 +1,28 @@
+{
+  "name": "Scriblism",
+  "status": "implemented-0.1.0",
+  "referenceProject": "../peeklism",
+  "independentProject": true,
+  "platform": "Windows",
+  "ui": {
+    "framework": "WinUI 3",
+    "nativeEditorRequired": true,
+    "webViewAllowed": false,
+    "electronAllowed": false
+  },
+  "requirements": [
+    "輕量文字與程式碼編輯器，參考 Notepad++，支援廣泛程式語言的語法高亮",
+    "Markdown 同一編輯區內即時編輯與格式呈現，參考 Obsidian 與 Typora，而非僅分割預覽",
+    "富文本編輯體驗；具體儲存格式尚未決定",
+    "檔案管理側欄",
+    "帶有 VS Code 的編輯器體驗，但不做臃腫的完整 IDE",
+    "不需要外掛系統",
+    "選擇性重用 Peeklism 的適用程式碼，不修改原專案"
+  ],
+  "engineeringQuestions": [
+    "評估原生編輯核心，驗證繁體中文 IME、復原重做、選取、游標與大型檔案效能",
+    "確認 Markdown 即時格式呈現與原始文字的無損往返策略",
+    "確認語法高亮引擎與第一批支援的語言",
+    "確認富文本是否只以 Markdown 儲存，或需要額外格式"
+  ]
+}

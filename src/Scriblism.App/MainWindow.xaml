@@ -1,0 +1,161 @@
+<Window x:Class="Scriblism.App.MainWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="Scriblism">
+ <Grid x:Name="Root" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop" SizeChanged="OnRootSizeChanged">
+  <Grid.RowDefinitions><RowDefinition Height="48"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <Grid x:Name="TitleBarHost" Background="{ThemeResource TabViewBackground}">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition x:Name="CaptionInset" Width="138"/></Grid.ColumnDefinitions>
+    <TabView x:Name="Tabs" TabWidthMode="Equal" CanDragTabs="True" CanReorderTabs="True" IsAddTabButtonVisible="False" TabCloseRequested="OnTabCloseRequested" SelectionChanged="OnTabChanged" AutomationProperties.Name="文件分頁" Background="Transparent" BorderThickness="0">
+     <TabView.Resources><Thickness x:Key="TabViewHeaderPadding">0,4,0,0</Thickness></TabView.Resources>
+    <TabView.TabStripFooter>
+     <Grid MinWidth="150" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+       <SplitButton x:Name="NewTabButton" Height="38" Margin="4,0,0,2" Padding="0" VerticalAlignment="Bottom" Background="Transparent" BorderThickness="0" Click="OnNewTabButtonClick" AutomationProperties.Name="新增文件" ToolTipService.ToolTip="新增文件 (Ctrl+N)">
+       <SplitButton.Content><FontIcon Glyph="&#xE710;" FontSize="12"/></SplitButton.Content>
+       <SplitButton.Flyout>
+        <MenuFlyout>
+         <MenuFlyoutItem Text="新增文件" Click="OnNew"/>
+         <MenuFlyoutItem Text="新增 Markdown" Click="OnNewMarkdown"/>
+         <MenuFlyoutSeparator/>
+         <MenuFlyoutItem Text="開啟檔案…" Click="OnOpen"/>
+        </MenuFlyout>
+       </SplitButton.Flyout>
+      </SplitButton>
+      <Grid x:Name="TitleBarDragArea" Grid.Column="1" Background="Transparent" MinWidth="80" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+     </Grid>
+    </TabView.TabStripFooter>
+   </TabView>
+  </Grid>
+  <Grid Grid.Row="1" Background="{ThemeResource LayerFillColorDefaultBrush}">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <MenuBar>
+    <MenuBarItem Title="檔案">
+     <MenuFlyoutItem Text="新增文件" Click="OnNew" KeyboardAcceleratorTextOverride="Ctrl+N"/>
+     <MenuFlyoutItem Text="新增 Markdown" Click="OnNewMarkdown" KeyboardAcceleratorTextOverride="Ctrl+Shift+N"/>
+     <MenuFlyoutItem Text="開啟檔案…" Click="OnOpen" KeyboardAcceleratorTextOverride="Ctrl+O"/>
+     <MenuFlyoutItem Text="開啟資料夾…" Click="OnOpenFolder" KeyboardAcceleratorTextOverride="Ctrl+Shift+O"/>
+     <MenuFlyoutSubItem x:Name="RecentMenu" Text="最近開啟"/>
+     <MenuFlyoutSeparator/>
+     <MenuFlyoutItem Text="儲存" Click="OnSave" KeyboardAcceleratorTextOverride="Ctrl+S"/>
+     <MenuFlyoutItem Text="另存新檔…" Click="OnSaveAs" KeyboardAcceleratorTextOverride="Ctrl+Shift+S"/>
+     <MenuFlyoutItem Text="全部儲存" Click="OnSaveAll"/>
+     <MenuFlyoutSeparator/>
+     <MenuFlyoutItem Text="關閉分頁" Click="OnCloseTab" KeyboardAcceleratorTextOverride="Ctrl+W"/>
+     <MenuFlyoutItem Text="結束" Click="OnExit"/>
+    </MenuBarItem>
+    <MenuBarItem Title="編輯">
+     <MenuFlyoutItem Text="復原" Click="OnUndo" KeyboardAcceleratorTextOverride="Ctrl+Z"/>
+     <MenuFlyoutItem Text="重做" Click="OnRedo" KeyboardAcceleratorTextOverride="Ctrl+Y"/>
+     <MenuFlyoutSeparator/>
+     <MenuFlyoutItem Text="剪下" Click="OnCut" KeyboardAcceleratorTextOverride="Ctrl+X"/>
+     <MenuFlyoutItem Text="複製" Click="OnCopy" KeyboardAcceleratorTextOverride="Ctrl+C"/>
+     <MenuFlyoutItem Text="貼上純文字" Click="OnPaste" KeyboardAcceleratorTextOverride="Ctrl+V"/>
+     <MenuFlyoutItem Text="全選" Click="OnSelectAll" KeyboardAcceleratorTextOverride="Ctrl+A"/>
+     <MenuFlyoutSeparator/>
+     <MenuFlyoutItem Text="搜尋" Click="OnFind" KeyboardAcceleratorTextOverride="Ctrl+F"/>
+     <MenuFlyoutItem Text="取代" Click="OnReplace" KeyboardAcceleratorTextOverride="Ctrl+H"/>
+     <MenuFlyoutItem Text="移至行…" Click="OnGoTo" KeyboardAcceleratorTextOverride="Ctrl+G"/>
+     <MenuFlyoutSeparator/>
+     <MenuFlyoutSubItem x:Name="MarkdownFormatMenu" Text="Markdown 格式">
+      <MenuFlyoutItem Text="粗體" Tag="**" Click="OnFormat" KeyboardAcceleratorTextOverride="Ctrl+Shift+B"/>
+      <MenuFlyoutItem Text="斜體" Tag="*" Click="OnFormat" KeyboardAcceleratorTextOverride="Ctrl+I"/>
+      <MenuFlyoutItem Text="標題" Tag="# " Click="OnFormat"/>
+      <MenuFlyoutItem Text="連結" Tag="link" Click="OnFormat"/>
+      <MenuFlyoutItem Text="程式碼區塊" Tag="code" Click="OnFormat"/>
+     </MenuFlyoutSubItem>
+    </MenuBarItem>
+    <MenuBarItem Title="檢視">
+     <ToggleMenuFlyoutItem x:Name="MarkdownSourceMenu" Text="Markdown 原始碼" Click="OnMarkdownMode" KeyboardAcceleratorTextOverride="Ctrl+E"/>
+     <ToggleMenuFlyoutItem x:Name="SidebarMenu" Text="側邊欄" IsChecked="True" Click="OnSidebar" KeyboardAcceleratorTextOverride="Ctrl+B"/>
+     <ToggleMenuFlyoutItem x:Name="WrapMenu" Text="自動換行" IsChecked="True" Click="OnWrap" KeyboardAcceleratorTextOverride="Alt+Z"/>
+     <ToggleMenuFlyoutItem x:Name="HiddenMenu" Text="顯示隱藏檔案" Click="OnHidden"/>
+     <MenuFlyoutItem Text="重新整理檔案樹" Click="OnRefresh" KeyboardAcceleratorTextOverride="F5"/>
+     <MenuFlyoutSeparator/>
+     <MenuFlyoutItem Text="放大文字" Click="OnZoomIn" KeyboardAcceleratorTextOverride="Ctrl++"/>
+     <MenuFlyoutItem Text="縮小文字" Click="OnZoomOut" KeyboardAcceleratorTextOverride="Ctrl+-"/>
+     <MenuFlyoutItem Text="重設文字大小" Click="OnZoomReset" KeyboardAcceleratorTextOverride="Ctrl+0"/>
+     <MenuFlyoutSubItem Text="主題">
+      <MenuFlyoutItem Text="跟隨 Windows" Tag="Default" Click="OnTheme"/>
+      <MenuFlyoutItem Text="淺色" Tag="Light" Click="OnTheme"/>
+      <MenuFlyoutItem Text="深色" Tag="Dark" Click="OnTheme"/>
+     </MenuFlyoutSubItem>
+    </MenuBarItem>
+    <MenuBarItem Title="說明"><MenuFlyoutItem Text="快捷鍵與功能範圍" Click="OnHelp"/><MenuFlyoutItem Text="關於 Scriblism" Click="OnAbout"/></MenuBarItem>
+   </MenuBar>
+   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" Margin="0,0,12,0">
+    <Button ToolTipService.ToolTip="開啟檔案 (Ctrl+O)" AutomationProperties.Name="開啟檔案" Click="OnOpen" Background="Transparent" BorderThickness="0"><FontIcon Glyph="&#xE8E5;" FontSize="16"/></Button>
+    <Button ToolTipService.ToolTip="儲存 (Ctrl+S)" AutomationProperties.Name="儲存" Click="OnSave" Background="Transparent" BorderThickness="0"><FontIcon Glyph="&#xE74E;" FontSize="16"/></Button>
+   </StackPanel>
+  </Grid>
+  <Grid Grid.Row="2">
+   <Grid.ColumnDefinitions><ColumnDefinition x:Name="SidebarColumn" Width="248"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+   <Border x:Name="Sidebar" BorderThickness="0,0,1,0" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" Background="{ThemeResource LayerFillColorDefaultBrush}">
+    <Grid>
+     <Pivot x:Name="SidebarSections" SelectionChanged="OnSidebarSection" AutomationProperties.Name="側邊欄檢視">
+      <PivotItem Header="檔案">
+       <Grid>
+        <ListView x:Name="FileList" SelectionMode="Single" AutomationProperties.Name="檔案總管"/>
+        <StackPanel x:Name="FolderEmpty" Spacing="8" Padding="12,12" VerticalAlignment="Top">
+         <TextBlock Text="開啟資料夾，在這裡瀏覽檔案。" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+         <Button Content="開啟資料夾" Click="OnOpenFolder" HorizontalAlignment="Left"/>
+         <TextBlock Text="也可以直接把檔案拖進視窗。" TextWrapping="Wrap" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+        </StackPanel>
+       </Grid>
+      </PivotItem>
+      <PivotItem Header="大綱">
+       <Grid><ListView x:Name="OutlineList" IsItemClickEnabled="True" ItemClick="OnOutlineClick" AutomationProperties.Name="Markdown 大綱"/><TextBlock x:Name="OutlineEmpty" Text="Markdown 標題會顯示在這裡。" TextWrapping="Wrap" Margin="12,12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/></Grid>
+      </PivotItem>
+     </Pivot>
+     <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,6,0" Canvas.ZIndex="1">
+      <Button Click="OnCreateFile" ToolTipService.ToolTip="在資料夾新增檔案" AutomationProperties.Name="新增檔案" Padding="4" MinHeight="28" MinWidth="28" Background="Transparent" BorderThickness="0"><FontIcon Glyph="&#xE710;" FontSize="13"/></Button>
+      <Button Click="OnOpenFolder" ToolTipService.ToolTip="開啟資料夾" AutomationProperties.Name="開啟資料夾" Padding="4" MinHeight="28" MinWidth="28" Background="Transparent" BorderThickness="0"><FontIcon Glyph="&#xE8B7;" FontSize="15"/></Button>
+     </StackPanel>
+    </Grid>
+   </Border>
+   <Grid x:Name="EditorWorkspace" Grid.Column="1" SizeChanged="OnEditorWorkspaceSizeChanged">
+    <ContentControl x:Name="DocumentHost" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False"/>
+    <Border x:Name="FindPanel" Canvas.ZIndex="10" Visibility="Collapsed"
+            HorizontalAlignment="Right" VerticalAlignment="Top" Width="500" Margin="12,4,12,0"
+            Background="{ThemeResource SolidBackgroundFillColorBaseBrush}" CornerRadius="8"
+            BorderThickness="1" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}">
+     <Border.Shadow><ThemeShadow/></Border.Shadow>
+     <StackPanel Padding="8" Spacing="6">
+      <Grid ColumnSpacing="4">
+       <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+       <ToggleButton x:Name="ReplaceExpander" AutomationProperties.Name="展開取代" ToolTipService.ToolTip="展開／收合取代" Click="OnToggleReplace" MinWidth="24" Padding="4" Background="Transparent" BorderThickness="0"><FontIcon x:Name="ReplaceChevron" Glyph="&#xE76C;" FontSize="10"/></ToggleButton>
+       <TextBox x:Name="FindBox" Grid.Column="1" PlaceholderText="搜尋" AutomationProperties.Name="搜尋文字" TextChanged="OnFindChanged" KeyDown="OnFindKey" MaxLength="4096"/>
+       <ToggleButton x:Name="CaseOption" Grid.Column="2" Content="Aa" ToolTipService.ToolTip="區分大小寫" AutomationProperties.Name="區分大小寫" Click="OnSearchOption" MinWidth="28" Padding="4" FontSize="12"/>
+       <ToggleButton x:Name="WordOption" Grid.Column="3" Content="ab" ToolTipService.ToolTip="完整單字" AutomationProperties.Name="完整單字" Click="OnSearchOption" MinWidth="28" Padding="4" FontSize="12"/>
+       <ToggleButton x:Name="RegexOption" Grid.Column="4" Content=".*" ToolTipService.ToolTip="正規表示式" AutomationProperties.Name="正規表示式" Click="OnSearchOption" MinWidth="28" Padding="4" FontSize="12"/>
+       <Button Grid.Column="5" Click="OnFindPrevious" AutomationProperties.Name="上一個結果" ToolTipService.ToolTip="上一個 (Shift+F3)" MinWidth="28" Padding="6,4" Background="Transparent" BorderThickness="0"><FontIcon Glyph="&#xE70E;" FontSize="12"/></Button>
+       <Button Grid.Column="6" Click="OnFindNext" AutomationProperties.Name="下一個結果" ToolTipService.ToolTip="下一個 (F3)" MinWidth="28" Padding="6,4" Background="Transparent" BorderThickness="0"><FontIcon Glyph="&#xE70D;" FontSize="12"/></Button>
+       <Button Grid.Column="7" Click="OnCloseFind" AutomationProperties.Name="關閉搜尋" ToolTipService.ToolTip="關閉 (Esc)" MinWidth="28" Padding="6,4" Background="Transparent" BorderThickness="0"><FontIcon Glyph="&#xE711;" FontSize="12"/></Button>
+      </Grid>
+      <Grid x:Name="ReplaceRow" Visibility="Collapsed" ColumnSpacing="6" Margin="28,0,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+       <TextBox x:Name="ReplaceBox" PlaceholderText="取代為" AutomationProperties.Name="取代文字" MaxLength="65536"/>
+       <Button Content="取代" Grid.Column="1" Click="OnReplaceOne" Padding="10,4"/>
+       <Button Content="全部取代" Grid.Column="2" Click="OnReplaceAll" Padding="10,4"/>
+      </Grid>
+      <TextBlock x:Name="FindStatus" Margin="28,0,4,0" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="輸入文字開始搜尋。" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+     </StackPanel>
+    </Border>
+   </Grid>
+  </Grid>
+  <InfoBar x:Name="Notice" Grid.Row="2" Canvas.ZIndex="20" Visibility="Collapsed" IsOpen="False" IsClosable="True" Severity="Informational"
+           HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="400" Margin="16" CornerRadius="8"
+           AutomationProperties.LiveSetting="Polite">
+   <InfoBar.Shadow><ThemeShadow/></InfoBar.Shadow>
+  </InfoBar>
+  <Grid Grid.Row="3" Padding="12,2" ColumnSpacing="12" Background="{ThemeResource LayerFillColorDefaultBrush}">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <TextBlock x:Name="PathStatus" FontSize="12" Text="Scriblism" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+   <TextBlock x:Name="PositionStatus" Grid.Column="1" FontSize="12" Text="行 1，欄 1" VerticalAlignment="Center"/>
+   <TextBlock x:Name="EncodingStatus" Grid.Column="2" FontSize="12" Text="UTF-8 · LF" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+   <Button x:Name="LanguageButton" Grid.Column="3" Content="純文字" FontSize="12" Padding="6,0" MinWidth="0" MinHeight="24" Background="Transparent" BorderThickness="0" AutomationProperties.Name="切換文件語言" ToolTipService.ToolTip="選擇語法高亮語言">
+    <Button.Flyout><MenuFlyout x:Name="LanguageMenu" Placement="TopEdgeAlignedRight"/></Button.Flyout>
+   </Button>
+   <Button x:Name="MarkdownMode" Grid.Column="4" Content="即時排版" FontSize="12" Padding="6,0" MinWidth="0" MinHeight="24" Background="Transparent" BorderThickness="0" Visibility="Collapsed" Click="OnMarkdownMode" ToolTipService.ToolTip="切換 Markdown 即時排版／原始碼 (Ctrl+E)"/>
+  </Grid>
+ </Grid>
+</Window>

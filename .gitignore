@@ -1,0 +1,6 @@
+bin/
+obj/
+artifacts/
+.impeccable/review/
+build.log
+*.user
