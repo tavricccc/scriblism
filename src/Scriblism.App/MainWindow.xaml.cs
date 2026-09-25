@@ -77,7 +77,16 @@ public sealed partial class MainWindow : Window
             if (_ready) return; _ready = true;
             if (paths.Contains("--native-test")) { await RunNativeTests(paths); return; }
             await RestoreRecovery();
-            foreach (var path in paths.Where(p => !p.StartsWith("--", StringComparison.Ordinal)))
+            var requestedPaths = paths.Where(p => !p.StartsWith("--", StringComparison.Ordinal)).ToArray();
+            if (_documents.Count == 0 && requestedPaths.Length == 0 && _settings.ReopenFilesOnStartup)
+            {
+                foreach (var path in _settings.LastOpenFiles)
+                    if (File.Exists(path)) await OpenPath(path);
+                if (_settings.LastActiveFile is { } active &&
+                    _documents.FirstOrDefault(d => string.Equals(d.Path, active, StringComparison.OrdinalIgnoreCase)) is { } previous)
+                    Tabs.SelectedItem = previous.Tab;
+            }
+            foreach (var path in requestedPaths)
             {
                 if (Directory.Exists(path)) await OpenFolder(path); else await OpenPath(path);
             }
@@ -313,7 +322,11 @@ public sealed partial class MainWindow : Window
         _closing = true;
         try
         {
+            var activePath = Current?.Path ?? _documents.LastOrDefault()?.Path;
             foreach (var doc in _documents.ToArray()) if (!await CanCloseDocument(doc)) return;
+            _settings.LastOpenFiles = _documents.Select(d => d.Path).OfType<string>()
+                .Distinct(StringComparer.OrdinalIgnoreCase).Take(32).ToList();
+            _settings.LastActiveFile = activePath;
             _recoveryTimer.Stop(); await _state.SaveRecoveryAsync([]); await _state.SaveSettingsAsync(_settings);
             _canClose = true; Close();
         }

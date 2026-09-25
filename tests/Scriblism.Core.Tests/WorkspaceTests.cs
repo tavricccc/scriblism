@@ -19,10 +19,13 @@ public sealed class WorkspaceTests : IDisposable
     public void InvalidNamesAreRefused(string name) => Assert.Throws<IOException>(() => Workspace.ChildPath(_root, name));
     [Fact] public async Task SettingsRoundTrip()
     {
+        var file = Path.Combine(_root, "a.cs");
         var store = new LocalStateStore(_root); var settings = new EditorSettings { Theme = "Dark", FontSize = 17,
-            SourceFonts = "Consolas, Cascadia Mono", MarkdownFonts = "Segoe UI, Microsoft JhengHei UI", RecentFiles = ["a.cs"] };
+            SourceFonts = "Consolas, Cascadia Mono", MarkdownFonts = "Segoe UI, Microsoft JhengHei UI", RecentFiles = ["a.cs"],
+            ReopenFilesOnStartup = true, LastOpenFiles = [file], LastActiveFile = file };
         await store.SaveSettingsAsync(settings); var loaded = store.LoadSettings(); Assert.Equal("Dark", loaded.Theme); Assert.Equal(17, loaded.FontSize); Assert.Single(loaded.RecentFiles);
         Assert.Equal(settings.SourceFonts, loaded.SourceFonts); Assert.Equal(settings.MarkdownFonts, loaded.MarkdownFonts);
+        Assert.True(loaded.ReopenFilesOnStartup); Assert.Equal([file], loaded.LastOpenFiles); Assert.Equal(file, loaded.LastActiveFile);
     }
     [Fact] public void FontListsKeepOrderAndRemoveInvalidEntries()
     {

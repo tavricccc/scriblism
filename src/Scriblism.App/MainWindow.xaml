@@ -132,7 +132,10 @@
       <ComboBox x:Name="ThemeSetting" Header="主題" Width="220" HorizontalAlignment="Left" SelectionChanged="OnSettingsThemeChanged">
        <ComboBoxItem Content="跟隨 Windows"/><ComboBoxItem Content="淺色"/><ComboBoxItem Content="深色"/>
       </ComboBox>
-      <ToggleSwitch x:Name="WrapSetting" Header="自動換行" Toggled="OnSettingsWrapChanged"/>
+       <ToggleSwitch x:Name="WrapSetting" Header="自動換行" Toggled="OnSettingsWrapChanged"/>
+       <TextBlock Text="啟動" FontSize="18" FontWeight="SemiBold" Margin="0,12,0,0"/>
+       <ToggleSwitch x:Name="ReopenFilesSetting" Header="重新開啟上次的檔案" Toggled="OnReopenFilesChanged"/>
+       <TextBlock Text="只重新開啟已儲存的檔案；結束前會詢問未儲存的變更。" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,-12,0,0"/>
      </StackPanel>
     </ScrollViewer>
     <Border x:Name="FindPanel" Canvas.ZIndex="10" Visibility="Collapsed"

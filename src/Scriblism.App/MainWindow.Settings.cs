@@ -41,6 +41,7 @@ public sealed partial class MainWindow
         MarkdownFontsBox.Text = _settings.MarkdownFonts;
         ThemeSetting.SelectedIndex = _settings.Theme switch { "Light" => 1, "Dark" => 2, _ => 0 };
         WrapSetting.IsOn = _settings.WordWrap;
+        ReopenFilesSetting.IsOn = _settings.ReopenFilesOnStartup;
         _loadingSettingsPage = false;
     }
 
@@ -69,6 +70,13 @@ public sealed partial class MainWindow
         WrapMenu.IsChecked = _settings.WordWrap;
         foreach (var doc in _documents)
             doc.ApplySettings(_settings.FontSize, _settings.WordWrap, _settings.SourceFonts, _settings.MarkdownFonts);
+        _ = PersistSettings();
+    }
+
+    private void OnReopenFilesChanged(object sender, RoutedEventArgs e)
+    {
+        if (_loadingSettingsPage || ReopenFilesSetting is null) return;
+        _settings.ReopenFilesOnStartup = ReopenFilesSetting.IsOn;
         _ = PersistSettings();
     }
 }

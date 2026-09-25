@@ -42,6 +42,9 @@ public sealed class EditorSettings
     public string SourceFonts { get; set; } = DefaultSourceFonts;
     public string MarkdownFonts { get; set; } = DefaultMarkdownFonts;
     public bool WordWrap { get; set; } = true;
+    public bool ReopenFilesOnStartup { get; set; }
+    public List<string> LastOpenFiles { get; set; } = [];
+    public string? LastActiveFile { get; set; }
     public bool SidebarVisible { get; set; } = true;
     public double SidebarWidth { get; set; } = 216;
     public bool ShowHidden { get; set; }
@@ -86,6 +89,10 @@ public sealed class LocalStateStore
             settings.MarkdownFonts = EditorSettings.NormalizeFonts(settings.MarkdownFonts, EditorSettings.DefaultMarkdownFonts);
             settings.SidebarWidth = double.IsFinite(settings.SidebarWidth) ? Math.Clamp(settings.SidebarWidth, 140, 480) : 216;
             settings.RecentFiles = (settings.RecentFiles ?? []).Where(p => !string.IsNullOrWhiteSpace(p)).Take(15).ToList();
+            settings.LastOpenFiles = (settings.LastOpenFiles ?? []).Where(p => !string.IsNullOrWhiteSpace(p) && Path.IsPathFullyQualified(p))
+                .Distinct(StringComparer.OrdinalIgnoreCase).Take(32).ToList();
+            if (settings.LastActiveFile is not null && !settings.LastOpenFiles.Contains(settings.LastActiveFile, StringComparer.OrdinalIgnoreCase))
+                settings.LastActiveFile = null;
             return settings;
         }
         catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException) { return new(); }
