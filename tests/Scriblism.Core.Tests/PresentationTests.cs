@@ -61,14 +61,28 @@ public sealed class PresentationTests
             Assert.False(MarkdownPresentation.ShouldHide(marker, text, 0, text.Length));
         }
     }
+    [Fact] public void MarkdownTablesKeepCellsAndAlignment()
+    {
+        const string text = "| Name | Score |\n| :--- | ---: |\n| **Ada** | 42 |\n| a\\|b | `x` |\n\n```md\n| not | a table |\n| --- | --- |\n```\n";
+        var result = MarkdownPresentation.Parse(text);
+        var table = Assert.Single(result.Tables);
+        Assert.Equal(0, table.Start);
+        Assert.Equal(3, table.Rows.Count);
+        Assert.Equal("Name", table.Rows[0].Cells[0].Text);
+        Assert.Equal("Ada", table.Rows[1].Cells[0].Text);
+        Assert.Equal("a|b", table.Rows[2].Cells[0].Text);
+        Assert.Equal("x", table.Rows[2].Cells[1].Text);
+        Assert.True(table.Rows[0].IsHeader);
+        Assert.Equal(Markdig.Extensions.Tables.TableColumnAlign.Left, table.Alignments[0]);
+        Assert.Equal(Markdig.Extensions.Tables.TableColumnAlign.Right, table.Alignments[1]);
+    }
     [Theory]
     [InlineData("**unfinished")]
     [InlineData("```cs\nclass A {}")]
     [InlineData("[link](broken")]
-    [InlineData("| a | b |\n|---|---|\n| c | d |")]
     [InlineData("![remote](https://example.com/a.png)")]
     [InlineData("<script>alert('x')</script>")]
     [InlineData("")]
-    public void IncompleteAndUnrenderedMarkdownRemainsPlainText(string text)
+    public void IncompleteMarkdownParsesSafely(string text)
     { var result = MarkdownPresentation.Parse(text); Assert.NotNull(result); }
 }

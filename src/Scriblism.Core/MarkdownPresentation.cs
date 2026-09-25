@@ -1,4 +1,5 @@
 using Markdig;
+using Markdig.Extensions.Tables;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 
@@ -7,7 +8,10 @@ namespace Scriblism.Core;
 public enum MarkdownStyle { Heading, Bold, Italic, Strike, Code, Quote, Link, Marker }
 public sealed record MarkdownSpan(int Start, int Length, MarkdownStyle Style, int Level = 0, int OwnerStart = -1, int OwnerEnd = -1);
 public sealed record OutlineEntry(string Title, int Level, int Offset);
-public sealed record MarkdownLayout(IReadOnlyList<MarkdownSpan> Spans, IReadOnlyList<Token> CodeTokens, IReadOnlyList<OutlineEntry> Outline);
+public sealed record MarkdownTableCell(string Text, int ColumnSpan = 1);
+public sealed record MarkdownTableRow(IReadOnlyList<MarkdownTableCell> Cells, bool IsHeader);
+public sealed record MarkdownTable(int Start, int End, IReadOnlyList<MarkdownTableRow> Rows, IReadOnlyList<TableColumnAlign?> Alignments);
+public sealed record MarkdownLayout(IReadOnlyList<MarkdownSpan> Spans, IReadOnlyList<Token> CodeTokens, IReadOnlyList<OutlineEntry> Outline, IReadOnlyList<MarkdownTable> Tables);
 
 public static class MarkdownPresentation
 {
@@ -15,8 +19,8 @@ public static class MarkdownPresentation
 
     public static MarkdownLayout Parse(string text, CancellationToken cancellation = default)
     {
-        var spans = new List<MarkdownSpan>(); var tokens = new List<Token>(); var outline = new List<OutlineEntry>();
-        if (text.Length > SyntaxHighlighter.MaximumHighlightLength) return new(spans, tokens, outline);
+        var spans = new List<MarkdownSpan>(); var tokens = new List<Token>(); var outline = new List<OutlineEntry>(); var tables = new List<MarkdownTable>();
+        if (text.Length > SyntaxHighlighter.MaximumHighlightLength) return new(spans, tokens, outline, tables);
         var document = Markdown.Parse(text, Pipeline);
         foreach (var node in document.Descendants())
         {
@@ -26,6 +30,22 @@ public static class MarkdownPresentation
             if (start == end) continue;
             switch (node)
             {
+                case Table table:
+                    var rows = new List<MarkdownTableRow>();
+                    foreach (var row in table.OfType<TableRow>())
+                    {
+                        var cells = row.OfType<TableCell>().Select(cell =>
+                        {
+                            var cellStart = Math.Clamp(cell.Span.Start, 0, text.Length);
+                            var cellEnd = Math.Clamp(cell.Span.End + 1, cellStart, text.Length);
+                            var source = text[cellStart..cellEnd];
+                            return new MarkdownTableCell(Markdown.ToPlainText(source, Pipeline).Trim(), Math.Max(1, cell.ColumnSpan));
+                        }).ToArray();
+                        rows.Add(new(cells, row.IsHeader));
+                    }
+                    if (rows.Count > 0)
+                        tables.Add(new(start, end, rows, table.ColumnDefinitions?.Select(column => column.Alignment).ToArray() ?? []));
+                    break;
                 case HeadingBlock heading:
                     spans.Add(new(start, end - start, MarkdownStyle.Heading, heading.Level));
                     var firstEnd = text.IndexOf('\n', start); if (firstEnd < 0 || firstEnd > end) firstEnd = end;
@@ -85,7 +105,7 @@ public static class MarkdownPresentation
                     break;
             }
         }
-        return new(spans, tokens, outline);
+        return new(spans, tokens, outline, tables);
         void Marker(int start, int length, int ownerStart, int ownerEnd)
         {
             if (length > 0 && start >= 0 && start + length <= text.Length)

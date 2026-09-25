@@ -1,7 +1,7 @@
 # One version for the whole product: the installer is never released separately from the
 # app it installs, so a second number would only ever be a thing to keep in sync.
 param(
-    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '0.3.1'
+    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '0.4.0'
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))

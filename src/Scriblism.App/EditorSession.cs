@@ -33,6 +33,7 @@ internal sealed class EditorSession : IDisposable
     public IReadOnlyList<OutlineEntry> Outline { get; private set; } = [];
     public Action<EditorSession>? Changed { get; set; }
     public Action<EditorSession>? SelectionMoved { get; set; }
+    public Action<EditorSession>? ModeChanged { get; set; }
     public Action<string>? Error { get; set; }
     private readonly Microsoft.UI.Dispatching.DispatcherQueueTimer _formatTimer;
     private readonly Microsoft.UI.Dispatching.DispatcherQueueTimer _captureTimer;
@@ -47,6 +48,7 @@ internal sealed class EditorSession : IDisposable
     private string _markdownFonts = EditorSettings.DefaultMarkdownFonts;
     private readonly AccessibilitySettings _accessibility = new();
     private readonly LineNumberGutter _gutter;
+    private readonly MarkdownFlowView _preview;
     private string? _largePresentation;
     private int _lineIndexRevision = -1;
     private int[] _lineStarts = [0];
@@ -89,6 +91,8 @@ internal sealed class EditorSession : IDisposable
         host.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         host.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         host.Children.Add(_gutter); Grid.SetColumn(Editor, 1); host.Children.Add(Editor);
+        _preview = new MarkdownFlowView(EnterSourceAt);
+        Grid.SetColumn(_preview.Scroller, 1); host.Children.Add(_preview.Scroller);
         View = host;
         Tab = new TabViewItem { Header = name, IconSource = new FontIconSource { Glyph = "\uE8A5" }, Tag = this, FontSize = 12, MinWidth = 174, MaxWidth = 208, MinHeight = 35 };
         ToolTipService.SetToolTip(Tab, path ?? name);
@@ -178,6 +182,7 @@ internal sealed class EditorSession : IDisposable
     public void ScheduleFormat()
     {
         if (_disposed || IsComposing) return;
+        UpdateMode();
         _formatCancellation?.Cancel(); _formatTimer.Stop(); _formatTimer.Start();
     }
 
@@ -204,6 +209,8 @@ internal sealed class EditorSession : IDisposable
             if (_disposed || cancellation.IsCancellationRequested || revision != Buffer.Revision || IsComposing) return;
             _markdown = markdown; Outline = markdown?.Outline ?? [];
             ApplyFormatting(text, tokens, markdown);
+            if (IsMarkdown && LiveMarkdown) _preview.Render(text, _fontSize, _markdownFonts);
+            UpdateMode();
             _gutter.Refresh(); SelectionMoved?.Invoke(this);
         }
         catch (OperationCanceledException) { }
@@ -362,12 +369,31 @@ internal sealed class EditorSession : IDisposable
     }
     public void Undo() { if (!IsComposing) { var result = Buffer.Undo(); LoadBuffer(result.Caret); Focus(); } }
     public void Redo() { if (!IsComposing) { var result = Buffer.Redo(); LoadBuffer(result.Caret); Focus(); } }
-    public void Focus() => Editor.Focus(FocusState.Programmatic);
+    private void UpdateMode()
+    {
+        var preview = IsMarkdown && LiveMarkdown;
+        Editor.Visibility = preview ? Visibility.Collapsed : Visibility.Visible;
+        _preview.Scroller.Visibility = preview ? Visibility.Visible : Visibility.Collapsed;
+        if (preview) _gutter.Visibility = Visibility.Collapsed;
+    }
+    private void EnterSourceAt(int offset)
+    {
+        LiveMarkdown = false;
+        UpdateMode(); ModeChanged?.Invoke(this); ScheduleFormat();
+        Select(offset, 0);
+    }
+    public void Focus()
+    {
+        if (IsMarkdown && LiveMarkdown) _preview.Scroller.Focus(FocusState.Programmatic);
+        else Editor.Focus(FocusState.Programmatic);
+    }
     public void Select(int start, int length)
     {
         start = Math.Clamp(start, 0, Buffer.Text.Length); length = Math.Clamp(length, 0, Buffer.Text.Length - start);
         Editor.Document.Selection.SetRange(start, start + length); UpdateMarkers();
-        Editor.Document.Selection.ScrollIntoView(PointOptions.Start); Focus();
+        if (IsMarkdown && LiveMarkdown) _preview.ScrollTo(start);
+        else Editor.Document.Selection.ScrollIntoView(PointOptions.Start);
+        Focus();
     }
     public void SelectAll() => Select(0, Buffer.Text.Length);
     public void Copy(bool cut)
@@ -392,6 +418,7 @@ internal sealed class EditorSession : IDisposable
     public void InsertMarkdown(string command)
     {
         if (!IsMarkdown || IsComposing) return;
+        if (LiveMarkdown) EnterSourceAt(SelectionStart);
         var start = SelectionStart; var end = SelectionEnd; var selected = Buffer.Text[start..end];
         var replacement = command switch
         {
@@ -436,5 +463,5 @@ internal sealed class EditorSession : IDisposable
         }
     }
     public RecoveryDocument Recovery() => new(Path, Name, Buffer.Text, Language.Id, EncodingName, Bom, NewLine, ExpectedHash);
-    public void Dispose() { _disposed = true; _formatTimer.Stop(); _captureTimer.Stop(); _formatCancellation?.Cancel(); _formatCancellation?.Dispose(); Changed = null; SelectionMoved = null; }
+    public void Dispose() { _disposed = true; _formatTimer.Stop(); _captureTimer.Stop(); _formatCancellation?.Cancel(); _formatCancellation?.Dispose(); Changed = null; SelectionMoved = null; ModeChanged = null; }
 }

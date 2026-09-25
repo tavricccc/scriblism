@@ -125,7 +125,7 @@
       <TextBlock Text="編輯器" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0"/>
       <TextBox x:Name="SourceFontsBox" Header="一般與原始碼字體" MaxLength="512" PlaceholderText="Cascadia Mono, Consolas" AutomationProperties.Name="一般與原始碼字體"/>
       <TextBlock Text="依序輸入多個字體名稱，使用逗號分隔。前面的字體缺少字元時使用後面的候補字體。" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,-12,0,0"/>
-      <TextBox x:Name="MarkdownFontsBox" Header="Markdown 即時排版字體" MaxLength="512" PlaceholderText="Segoe UI Variable Text, Microsoft JhengHei UI" AutomationProperties.Name="Markdown 即時排版字體"/>
+      <TextBox x:Name="MarkdownFontsBox" Header="Markdown 預覽字體" MaxLength="512" PlaceholderText="Segoe UI Variable Text, Microsoft JhengHei UI" AutomationProperties.Name="Markdown 預覽字體"/>
       <TextBlock Text="Markdown 原始碼使用上面的原始碼字體。" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,-12,0,0"/>
       <Button Content="套用字體" Click="OnApplyFonts" HorizontalAlignment="Left"/>
       <TextBlock Text="外觀" FontSize="18" FontWeight="SemiBold" Margin="0,12,0,0"/>
@@ -178,7 +178,7 @@
    <Button x:Name="LanguageButton" Grid.Column="3" Content="純文字" FontSize="12" Padding="6,0" MinWidth="0" MinHeight="24" Background="Transparent" BorderThickness="0" AutomationProperties.Name="切換文件語言" ToolTipService.ToolTip="選擇語法高亮語言">
     <Button.Flyout><MenuFlyout x:Name="LanguageMenu" Placement="TopEdgeAlignedRight"/></Button.Flyout>
    </Button>
-   <Button x:Name="MarkdownMode" Grid.Column="4" Content="即時排版" FontSize="12" Padding="6,0" MinWidth="0" MinHeight="24" Background="Transparent" BorderThickness="0" Visibility="Collapsed" Click="OnMarkdownMode" ToolTipService.ToolTip="切換 Markdown 即時排版／原始碼 (Ctrl+E)"/>
+   <Button x:Name="MarkdownMode" Grid.Column="4" Content="預覽" FontSize="12" Padding="6,0" MinWidth="0" MinHeight="24" Background="Transparent" BorderThickness="0" Visibility="Collapsed" Click="OnMarkdownMode" ToolTipService.ToolTip="切換 Markdown 預覽／原始碼 (Ctrl+E)"/>
   </Grid>
  </Grid>
 </Window>

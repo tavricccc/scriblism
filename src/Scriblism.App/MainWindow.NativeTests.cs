@@ -28,6 +28,30 @@ public sealed partial class MainWindow
                 catch (IOException) { rejected = true; }
                 Check("unsupported text rejected without mutation", rejected, unsupported);
             }
+            const string tableMarkdown = "# Heading\n\n| Name | Score |\n| :--- | ---: |\n| Ada | 42 |\n\nAfter table\n";
+            var tableDoc = new EditorSession("table.md", tableMarkdown); AddDocument(tableDoc);
+            await Ready(tableDoc);
+            tableDoc.Select(tableMarkdown.Length, 0); await tableDoc.FormatAsync(); Root.UpdateLayout();
+            var preview = tableDoc.View.Children.OfType<Microsoft.UI.Xaml.Controls.ScrollViewer>().Single();
+            var flow = (Microsoft.UI.Xaml.Controls.StackPanel)preview.Content;
+            var tableView = flow.Children.OfType<Microsoft.UI.Xaml.Controls.Grid>().Single();
+            Check("Markdown table shares document scroll flow", preview.Visibility == Microsoft.UI.Xaml.Visibility.Visible &&
+                !tableDoc.View.Children.OfType<Microsoft.UI.Xaml.Controls.Canvas>().Any(layer => Microsoft.UI.Xaml.Controls.Grid.GetColumn(layer) == 1), "Preview is the scroll container");
+            Check("table matches prose width and natural height", Math.Abs(tableView.ActualWidth - flow.ActualWidth) < 2 &&
+                tableView.ActualHeight > 0 && tableView.ActualHeight < preview.ActualHeight / 2,
+                $"Flow: {flow.ActualWidth}, table: {tableView.ActualWidth}x{tableView.ActualHeight}");
+            Check("table display preserves Markdown source", tableDoc.ReadNativeText() == tableMarkdown && !tableDoc.Buffer.IsDirty, tableDoc.ReadNativeText());
+            tableDoc.LiveMarkdown = false; await tableDoc.FormatAsync();
+            Check("source mode shows editable Markdown", preview.Visibility == Microsoft.UI.Xaml.Visibility.Collapsed && tableDoc.Editor.Visibility == Microsoft.UI.Xaml.Visibility.Visible && tableDoc.ReadNativeText() == tableMarkdown, tableDoc.ReadNativeText());
+            Remove(tableDoc);
+            var distantMarkdown = string.Concat(Enumerable.Repeat("A paragraph before the table.\n\n", 120)) + tableMarkdown;
+            var distantDoc = new EditorSession("distant-table.md", distantMarkdown); AddDocument(distantDoc);
+            await Ready(distantDoc);
+            distantDoc.Select(0, 0); await distantDoc.FormatAsync(); Root.UpdateLayout();
+            Check("offscreen table does not interrupt editing", distantDoc.ReadNativeText() == distantMarkdown, distantDoc.ReadNativeText());
+            var distantPreview = distantDoc.View.Children.OfType<Microsoft.UI.Xaml.Controls.ScrollViewer>().Single();
+            Check("distant table remains in document flow", ((Microsoft.UI.Xaml.Controls.StackPanel)distantPreview.Content).Children.OfType<Microsoft.UI.Xaml.Controls.Grid>().Count() == 1, "Table block count");
+            Remove(distantDoc);
             var markdown = "# 原生 Markdown\n\n**粗體** 與 *斜體*、~~刪除~~、[連結](https://example.com)\n\n```csharp\npublic class Hello { }\n```\n\n最後一行\n";
             var sample = new EditorSession("native.md", markdown); AddDocument(sample);
             await Ready(sample);

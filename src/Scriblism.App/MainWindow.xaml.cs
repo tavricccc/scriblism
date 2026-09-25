@@ -118,6 +118,7 @@ public sealed partial class MainWindow : Window
         document.Error = message => ShowNotice("編輯器", message, InfoBarSeverity.Warning);
         document.Changed = OnDocumentChanged;
         document.SelectionMoved = doc => { if (doc == Current) { UpdateStatus(); RefreshOutline(); } };
+        document.ModeChanged = doc => { if (doc == Current) UpdateDocumentUi(); };
         document.ApplySettings(_settings.FontSize, _settings.WordWrap, _settings.SourceFonts, _settings.MarkdownFonts);
         _documents.Add(document); Tabs.TabItems.Add(document.Tab); Tabs.SelectedItem = document.Tab;
         UpdateDocumentUi(); document.Focus();
@@ -140,8 +141,9 @@ public sealed partial class MainWindow : Window
         LanguageButton.Content = doc?.Language.Name ?? "純文字";
         foreach (var item in LanguageMenu.Items.OfType<ToggleMenuFlyoutItem>()) item.IsChecked = ReferenceEquals(item.Tag, doc?.Language);
         MarkdownMode.Visibility = doc?.IsMarkdown == true ? Visibility.Visible : Visibility.Collapsed;
-        MarkdownMode.Content = doc?.LiveMarkdown != false ? "即時排版" : "原始碼";
-        MarkdownSourceMenu.IsEnabled = MarkdownFormatMenu.IsEnabled = doc?.IsMarkdown == true;
+        MarkdownMode.Content = doc?.LiveMarkdown != false ? "預覽" : "原始碼";
+        MarkdownSourceMenu.IsEnabled = doc?.IsMarkdown == true;
+        MarkdownFormatMenu.IsEnabled = doc?.IsMarkdown == true && doc.LiveMarkdown == false;
         MarkdownSourceMenu.IsChecked = doc?.LiveMarkdown == false;
         UpdateResponsiveLayout(); UpdateStatus(); RefreshOutline();
         if (FindPanel.Visibility == Visibility.Visible) ScheduleSearch();

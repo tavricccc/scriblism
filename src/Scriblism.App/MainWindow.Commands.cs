@@ -135,12 +135,12 @@ public sealed partial class MainWindow
     {
         await Ask("快捷鍵與功能範圍", new ScrollViewer { MaxHeight = 480, Content = new TextBlock
         {
-            Text = "Ctrl+N 新增文件　Ctrl+Shift+N 新增 Markdown\nCtrl+O 開啟檔案　Ctrl+Shift+O 開啟資料夾\nCtrl+S 儲存　Ctrl+Shift+S 另存新檔\nCtrl+W 關閉分頁　Ctrl+Tab 切換分頁\nCtrl+, 開啟設定\nCtrl+F 搜尋　Ctrl+H 取代　F3 下一個結果\nCtrl+G 移至行　Ctrl+B 顯示／隱藏側邊欄\nCtrl+E Markdown 排版／原始碼　Alt+Z 自動換行\nCtrl+Z 復原　Ctrl+Y 重做\nCtrl+Shift+B 粗體　Ctrl+I 斜體（Markdown）\nCtrl++／Ctrl+- 縮放　Ctrl+0 重設\nTab 插入四個空白；Shift+Tab 可離開編輯區。\n\nMarkdown 排版不更動原始文字。游標所在行顯示語法標記，其他行隱藏支援的行內標記。支援標題、粗斜體、刪除線、引用、連結和程式碼顏色；表格與圖片語法保留原文，不載入外部內容。\n\n支援語法上色，但沒有自動完成或編譯功能。超過 262,144 字元的文件停用高亮；文字檔案上限 16 MiB。\n\n保留 UTF-8、帶 BOM 的 UTF-16／32 與換行格式。不猜測舊式 ANSI 編碼。異常結束的未儲存內容可在下次啟動復原。",
+            Text = "Ctrl+N 新增文件　Ctrl+Shift+N 新增 Markdown\nCtrl+O 開啟檔案　Ctrl+Shift+O 開啟資料夾\nCtrl+S 儲存　Ctrl+Shift+S 另存新檔\nCtrl+W 關閉分頁　Ctrl+Tab 切換分頁\nCtrl+, 開啟設定\nCtrl+F 搜尋　Ctrl+H 取代　F3 下一個結果\nCtrl+G 移至行　Ctrl+B 顯示／隱藏側邊欄\nCtrl+E Markdown 預覽／原始碼　Alt+Z 自動換行\nCtrl+Z 復原　Ctrl+Y 重做\nCtrl+Shift+B 粗體　Ctrl+I 斜體（Markdown）\nCtrl++／Ctrl+- 縮放　Ctrl+0 重設\nTab 插入四個空白；Shift+Tab 可離開編輯區。\n\nMarkdown 預覽不更動原始文字。表格與正文一起捲動，儲存格文字會換行；點選預覽區塊可切到原始碼編輯，Ctrl+E 可返回預覽。圖片保留原始語法，不載入外部內容。\n\n支援語法上色，但沒有自動完成或編譯功能。超過 262,144 字元的文件停用高亮；文字檔案上限 16 MiB。\n\n保留 UTF-8、帶 BOM 的 UTF-16／32 與換行格式。不猜測舊式 ANSI 編碼。異常結束的未儲存內容可在下次啟動復原。",
             TextWrapping = TextWrapping.Wrap, MaxWidth = 520
         } }, "", "", "關閉");
     }
     private async void OnAbout(object sender, RoutedEventArgs e)
-    { await Ask($"Scriblism {typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}", "編輯文字、程式碼與 Markdown。可同時開啟多個檔案，並在原始碼與即時排版間切換。\n\n未儲存內容的備份位置：" + _state.Root, "", "", "關閉"); }
+    { await Ask($"Scriblism {typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}", "編輯文字、程式碼與 Markdown。可同時開啟多個檔案，並在原始碼與預覽間切換。\n\n未儲存內容的備份位置：" + _state.Root, "", "", "關閉"); }
 
     private SearchResult _search = new([], null);
     private int _searchVersion, _matchIndex = -1;
