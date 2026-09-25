@@ -121,7 +121,7 @@
     <ContentControl x:Name="DocumentHost" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False"/>
     <ScrollViewer x:Name="SettingsPage" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" AutomationProperties.Name="設定頁">
      <StackPanel MaxWidth="680" Margin="32,24,32,40" HorizontalAlignment="Left" Spacing="18">
-      <TextBlock Text="設定" FontSize="26" FontWeight="SemiBold"/>
+      <TextBlock Text="設定" Style="{ThemeResource TitleTextBlockStyle}"/>
       <TextBlock Text="編輯器" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0"/>
       <TextBox x:Name="SourceFontsBox" Header="一般與原始碼字體" MaxLength="512" PlaceholderText="Cascadia Mono, Consolas" AutomationProperties.Name="一般與原始碼字體"/>
       <TextBlock Text="依序輸入多個字體名稱，使用逗號分隔。前面的字體缺少字元時使用後面的候補字體。" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,-12,0,0"/>
