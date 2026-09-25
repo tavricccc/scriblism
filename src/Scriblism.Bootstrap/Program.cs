@@ -85,11 +85,8 @@ internal static class Program
 
         var answer = MessageBox(
             0,
-            "Scriblism 需要 Microsoft 的 Windows App 執行環境，這台電腦尚未完整安裝。\n\n"
-                + "要登錄缺少的共用元件嗎？元件已經在這個安裝程式裡，不需要連網，"
-                + "登錄後由 Windows 集中保管一份，其他使用相同版本的應用程式也能共用，"
-                + "省下約 145 MB 的磁碟空間。\n\n"
-                + "選「否」也可以照常安裝：Scriblism 會自己帶一份執行環境，不登錄任何共用元件。",
+            "這台電腦還沒有 Scriblism 需要的 Microsoft 元件。要安裝可供其他 App 共用的版本嗎？\n\n"
+                + "選「是」可節省安裝空間；選「否」也能繼續安裝 Scriblism。",
             "Scriblism",
             IconQuestion);
 
@@ -97,7 +94,7 @@ internal static class Program
 
         try
         {
-            using var progress = new ProgressDialog("Scriblism", "正在登錄 Windows App 執行環境…");
+            using var progress = new ProgressDialog("Scriblism", "正在準備必要元件…");
             Payload.Extract(payload, [Payload.RuntimePrefix], packages);
             WindowsAppRuntime.Install(packages, progress);
             return Payload.SharedPrefix;
@@ -109,9 +106,9 @@ internal static class Program
             // is right here, so the install carries on with it.
             MessageBox(
                 0,
-                "無法登錄共用的 Windows App 執行環境：\n"
+                "無法安裝共用元件：\n"
                     + exception.Message
-                    + "\n\n將改為安裝自帶執行環境的版本，不需要任何共用元件。",
+                    + "\n\n將繼續安裝 Scriblism。",
                 "Scriblism",
                 IconInformation);
             return Payload.StandalonePrefix;

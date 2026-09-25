@@ -1,4 +1,4 @@
-param([switch]$SkipTests, [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '0.2.0')
+param([switch]$SkipTests, [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '0.3.0')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 if (!$SkipTests) { & (Join-Path $PSScriptRoot 'Build.ps1') -Configuration Release -NativeTests }

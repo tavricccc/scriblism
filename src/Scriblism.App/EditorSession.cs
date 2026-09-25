@@ -82,7 +82,7 @@ internal sealed class EditorSession : IDisposable
         ScrollViewer.SetHorizontalScrollBarVisibility(Editor, ScrollBarVisibility.Auto);
         ScrollViewer.SetVerticalScrollBarVisibility(Editor, ScrollBarVisibility.Auto);
         Editor.Document.SetText(TextSetOptions.None, text.Replace('\n', '\r'));
-        if (ReadNativeText() != text) throw new IOException("原生編輯器無法完整保留這份文字，未開啟檔案。");
+        if (ReadNativeText() != text) throw new IOException("無法完整讀取這份文字，檔案未開啟。");
         Editor.Document.Selection.SetRange(0, 0);
         _gutter = new LineNumberGutter(Editor, Buffer);
         var host = new Grid();
@@ -324,7 +324,7 @@ internal sealed class EditorSession : IDisposable
             {
                 Editor.Document.SetText(TextSetOptions.None, Buffer.Text.Replace('\n', '\r'));
                 Editor.Document.Selection.SetRange(start, end);
-                Error?.Invoke("原生編輯器無法完整保留貼上的字元，已取消這次貼上。"); return;
+                Error?.Invoke("部分字元無法貼上，這次貼上已取消。"); return;
             }
             Editor.Document.Selection.SetRange(start + normalized.Length, start + normalized.Length);
             Buffer.Update(next, start + normalized.Length, false);
@@ -344,7 +344,7 @@ internal sealed class EditorSession : IDisposable
             {
                 Editor.Document.SetText(TextSetOptions.None, Buffer.Text.Replace('\n', '\r'));
                 Editor.Document.Selection.SetRange(start, end);
-                throw new IOException("原生編輯器無法完整保留取代後的文字，未執行變更。");
+                throw new IOException("無法完整保留取代後的文字，這次取代未執行。");
             }
             caret = Math.Clamp(caret, 0, text.Length);
             Editor.Document.Selection.SetRange(caret, caret);
