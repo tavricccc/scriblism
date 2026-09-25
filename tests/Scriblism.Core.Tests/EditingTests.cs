@@ -21,6 +21,14 @@ public sealed class EditingTests
         var buffer = new DocumentBuffer(); buffer.Update("before IO", 9, false); var saving = buffer.Text;
         buffer.Update("after IO", 8, false); buffer.MarkSaved(saving); Assert.True(buffer.IsDirty);
     }
+    [Fact] public void SameLengthEditAndUndoRestoreSavedState()
+    {
+        var buffer = new DocumentBuffer("筆記😀");
+        buffer.Update("筆記😃", 4, false);
+        Assert.True(buffer.IsDirty);
+        buffer.Undo();
+        Assert.False(buffer.IsDirty);
+    }
     [Fact] public void EditingAfterUndoInvalidatesRedo()
     {
         var buffer = new DocumentBuffer("a"); buffer.Update("b", 1, false); buffer.Undo(); buffer.Update("c", 1, false);

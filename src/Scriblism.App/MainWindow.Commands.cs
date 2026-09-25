@@ -140,7 +140,7 @@ public sealed partial class MainWindow
         } }, "", "", "關閉");
     }
     private async void OnAbout(object sender, RoutedEventArgs e)
-    { await Ask($"Scriblism {typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}", "原生 Windows 文字與 Markdown 編輯器。\nWinUI 3 · Windows RichEdit · Markdig\n\n不使用 WebView2 或 Electron，不提供外掛系統。\n備份與設定：" + _state.Root, "", "", "關閉"); }
+    { await Ask($"Scriblism {typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}", "編輯文字、程式碼與 Markdown。可同時開啟多個檔案，並在原始碼與即時排版間切換。\n\n未儲存內容的備份位置：" + _state.Root, "", "", "關閉"); }
 
     private SearchResult _search = new([], null);
     private int _searchVersion, _matchIndex = -1;

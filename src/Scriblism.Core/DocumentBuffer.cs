@@ -1,3 +1,6 @@
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+
 namespace Scriblism.Core;
 
 public sealed record EditResult(string Text, int Caret);
@@ -8,7 +11,8 @@ public sealed class DocumentBuffer
 {
     private readonly List<TextEdit> _undo = [];
     private readonly List<TextEdit> _redo = [];
-    private string _saved;
+    private byte[] _savedHash;
+    private int _savedLength;
     private int _lastCaret;
     private bool _breakGroup;
     private long _historyBytes;
@@ -18,8 +22,21 @@ public sealed class DocumentBuffer
     public bool CanUndo => _undo.Count > 0;
     public bool CanRedo => _redo.Count > 0;
     public int Revision { get; private set; }
-    public DocumentBuffer(string text = "") { Text = _saved = text; }
-    public void MarkSaved(string savedText) { _saved = savedText; _isDirty = !StringComparer.Ordinal.Equals(Text, _saved); BreakUndoGroup(); }
+    public DocumentBuffer(string text = "")
+    {
+        Text = text;
+        _savedLength = text.Length;
+        _savedHash = Hash(text);
+    }
+    public void MarkSaved(string savedText)
+    {
+        _savedLength = savedText.Length;
+        _savedHash = Hash(savedText);
+        _isDirty = DiffersFromSaved();
+        BreakUndoGroup();
+    }
+    private static byte[] Hash(string text) => SHA256.HashData(MemoryMarshal.AsBytes(text.AsSpan()));
+    private bool DiffersFromSaved() => Text.Length != _savedLength || !Hash(Text).AsSpan().SequenceEqual(_savedHash);
     public void BreakUndoGroup() => _breakGroup = true;
     public void RememberCaret(int caret) => _lastCaret = Math.Clamp(caret, 0, Text.Length);
 
@@ -50,7 +67,7 @@ public sealed class DocumentBuffer
             _historyBytes -= (_undo[0].Removed.Length + _undo[0].Inserted.Length) * 2L;
             _undo.RemoveAt(0);
         }
-        Text = next; _isDirty = !StringComparer.Ordinal.Equals(Text, _saved); _lastCaret = caret; Revision++;
+        Text = next; _isDirty = DiffersFromSaved(); _lastCaret = caret; Revision++;
         return true;
     }
 
@@ -61,7 +78,7 @@ public sealed class DocumentBuffer
         var edit = _undo[^1]; _undo.RemoveAt(_undo.Count - 1);
         _historyBytes -= (edit.Removed.Length + edit.Inserted.Length) * 2L;
         Text = Text.Remove(edit.Start, edit.Inserted.Length).Insert(edit.Start, edit.Removed);
-        _isDirty = !StringComparer.Ordinal.Equals(Text, _saved);
+        _isDirty = DiffersFromSaved();
         _redo.Add(edit); _lastCaret = Math.Clamp(edit.BeforeCaret, 0, Text.Length); Revision++; BreakUndoGroup();
         return new(Text, _lastCaret);
     }
@@ -70,7 +87,7 @@ public sealed class DocumentBuffer
         if (_redo.Count == 0) return new(Text, _lastCaret);
         var edit = _redo[^1]; _redo.RemoveAt(_redo.Count - 1);
         Text = Text.Remove(edit.Start, edit.Removed.Length).Insert(edit.Start, edit.Inserted);
-        _isDirty = !StringComparer.Ordinal.Equals(Text, _saved);
+        _isDirty = DiffersFromSaved();
         AddUndo(edit); _lastCaret = Math.Clamp(edit.AfterCaret, 0, Text.Length); Revision++; BreakUndoGroup();
         return new(Text, _lastCaret);
     }
