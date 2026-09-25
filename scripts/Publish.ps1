@@ -1,4 +1,4 @@
-param([switch]$SkipTests)
+param([switch]$SkipTests, [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '0.2.0')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 if (!$SkipTests) { & (Join-Path $PSScriptRoot 'Build.ps1') -Configuration Release -NativeTests }
@@ -10,12 +10,12 @@ $destination = Join-Path $root 'artifacts/Scriblism-win-x64'
 $staging = Join-Path $root ('artifacts/publish-' + [Guid]::NewGuid().ToString('N'))
 Push-Location $root
 try {
-    & $dotnet publish src/Scriblism.App/Scriblism.App.csproj -c Release -r win-x64 --self-contained true -p:WindowsAppSDKSelfContained=true -p:DebugType=None -p:DebugSymbols=false -o $staging
+    & $dotnet publish src/Scriblism.App/Scriblism.App.csproj -c Release -r win-x64 --self-contained true -p:AppVersion=$Version -p:WindowsAppSDKSelfContained=true -p:DebugType=None -p:DebugSymbols=false -o $staging
     if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
     Copy-Item (Join-Path $root 'third-party') (Join-Path $staging 'third-party') -Recurse
     Copy-Item (Join-Path $root 'README.md'),(Join-Path $root 'THIRD-PARTY-NOTICES.md') $staging
     Copy-Item (Join-Path $PSScriptRoot 'Install.ps1'),(Join-Path $PSScriptRoot 'Uninstall.ps1') $staging
-    [IO.File]::WriteAllText((Join-Path $staging 'scriblism-package.json'), '{"product":"Scriblism","version":"0.1.0","architecture":"x64","selfContained":true}')
+    [IO.File]::WriteAllText((Join-Path $staging 'scriblism-package.json'), (@{ product = 'Scriblism'; version = $Version; architecture = 'x64'; selfContained = $true } | ConvertTo-Json -Compress))
     $files = @(Get-ChildItem $staging -File -Recurse | ForEach-Object {
         @{ path = [IO.Path]::GetRelativePath($staging, $_.FullName); sha256 = (Get-FileHash $_.FullName -Algorithm SHA256).Hash }
     })
@@ -26,10 +26,11 @@ try {
         Move-Item $destination $history
     }
     Move-Item $staging $destination
-    $archive = Join-Path $root 'artifacts/Scriblism-0.1.0-win-x64.zip'
+    $archiveName = "Scriblism-$Version-win-x64.zip"
+    $archive = Join-Path $root "artifacts/$archiveName"
     Compress-Archive -Path "$destination/*" -DestinationPath $archive -Force -CompressionLevel Optimal
     $hash = (Get-FileHash $archive -Algorithm SHA256).Hash
-    [IO.File]::WriteAllText(($archive + '.sha256'), "$hash  Scriblism-0.1.0-win-x64.zip`n")
+    [IO.File]::WriteAllText(($archive + '.sha256'), "$hash  $archiveName`n")
     Write-Output "Application: $destination/Scriblism.exe"
     Write-Output "Archive: $archive"
     Write-Output "SHA256: $hash"

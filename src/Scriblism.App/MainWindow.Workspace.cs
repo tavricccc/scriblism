@@ -62,11 +62,11 @@ public sealed partial class MainWindow
     {
         var fileRow = new FileRow(entry, depth);
         var label = new TextBlock { Text = entry.Name, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(8 + depth * 14, 0, 4, 0) };
-        var chevron = new TextBlock { Text = entry.IsDirectory && !entry.IsLink ? "›" : "", Width = 10, FontSize = 16, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center };
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Margin = new Thickness(1 + depth * 12, 0, 0, 0) };
+        var chevron = new TextBlock { Text = entry.IsDirectory && !entry.IsLink ? "›" : "", Width = 9, FontSize = 14, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center };
         fileRow.Chevron = chevron;
         row.Children.Add(chevron);
-        row.Children.Add(new FontIcon { Glyph = entry.IsDirectory ? "\uE8B7" : "\uE8A5", FontSize = 14, Opacity = .8 });
+        row.Children.Add(new FontIcon { Glyph = entry.IsDirectory ? "\uE8B7" : "\uE8A5", FontSize = 12, Opacity = .8 });
         row.Children.Add(label); ToolTipService.SetToolTip(row, entry.Path);
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(row, entry.Name + (entry.IsLink ? "（連結）" : ""));
         var menu = new MenuFlyout();
@@ -82,7 +82,7 @@ public sealed partial class MainWindow
             try { var package = new Windows.ApplicationModel.DataTransfer.DataPackage(); package.SetText(entry.Path); Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(package); }
             catch (Exception error) { ShowError("無法複製路徑", error); }
         });
-        var item = new ListViewItem { Content = row, Tag = fileRow, Height = 34, MinHeight = 34, Padding = new Thickness(0), Margin = new Thickness(0) };
+        var item = new ListViewItem { Content = row, Tag = fileRow, Height = 29, MinHeight = 29, Padding = new Thickness(0), Margin = new Thickness(0) };
         item.ContextFlyout = menu;
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(item, entry.Name + (entry.IsLink ? "（連結）" : ""));
         item.Tapped += async (_, args) => { args.Handled = true; await ActivateFileRow(fileRow); };
@@ -170,7 +170,7 @@ public sealed partial class MainWindow
         if (outline is not null)
             foreach (var item in outline)
             {
-                var row = new ListViewItem { Content = item.Title, Tag = item, MinHeight = 34, Padding = new Thickness(12 + (item.Level - 1) * 12, 5, 8, 5) };
+                var row = new ListViewItem { Content = item.Title, Tag = item, MinHeight = 29, Padding = new Thickness(10 + (item.Level - 1) * 10, 4, 7, 4) };
                 OutlineList.Items.Add(row);
             }
         OutlineEmpty.Visibility = outline?.Count > 0 ? Visibility.Collapsed : Visibility.Visible;

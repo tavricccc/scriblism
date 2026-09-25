@@ -35,12 +35,25 @@ public static class Workspace
 
 public sealed class EditorSettings
 {
+    public const string DefaultSourceFonts = "Cascadia Mono, Consolas";
+    public const string DefaultMarkdownFonts = "Segoe UI Variable Text, Microsoft JhengHei UI";
     public string Theme { get; set; } = "Default";
     public double FontSize { get; set; } = 15;
+    public string SourceFonts { get; set; } = DefaultSourceFonts;
+    public string MarkdownFonts { get; set; } = DefaultMarkdownFonts;
     public bool WordWrap { get; set; } = true;
     public bool SidebarVisible { get; set; } = true;
+    public double SidebarWidth { get; set; } = 216;
     public bool ShowHidden { get; set; }
     public List<string> RecentFiles { get; set; } = [];
+    public static string NormalizeFonts(string? value, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return fallback;
+        var families = value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Where(name => name.Length <= 80 && !name.Any(char.IsControl))
+            .Distinct(StringComparer.OrdinalIgnoreCase).Take(8).ToArray();
+        return families.Length == 0 ? fallback : string.Join(", ", families);
+    }
 }
 
 public sealed record RecoveryDocument(string? Path, string Name, string Text, string LanguageId,
@@ -69,6 +82,9 @@ public sealed class LocalStateStore
             if (new FileInfo(path).Length > 1024 * 1024) return new();
             var settings = JsonSerializer.Deserialize<EditorSettings>(File.ReadAllText(path)) ?? new();
             settings.FontSize = double.IsFinite(settings.FontSize) ? Math.Clamp(settings.FontSize, 10, 32) : 15;
+            settings.SourceFonts = EditorSettings.NormalizeFonts(settings.SourceFonts, EditorSettings.DefaultSourceFonts);
+            settings.MarkdownFonts = EditorSettings.NormalizeFonts(settings.MarkdownFonts, EditorSettings.DefaultMarkdownFonts);
+            settings.SidebarWidth = double.IsFinite(settings.SidebarWidth) ? Math.Clamp(settings.SidebarWidth, 140, 480) : 216;
             settings.RecentFiles = (settings.RecentFiles ?? []).Where(p => !string.IsNullOrWhiteSpace(p)).Take(15).ToList();
             return settings;
         }

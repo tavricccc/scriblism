@@ -15,6 +15,7 @@ namespace Scriblism.App;
 public sealed partial class MainWindow : Window
 {
     private readonly List<EditorSession> _documents = [];
+    private TabViewItem? _settingsTab;
     private readonly LocalStateStore _state = new(Environment.GetEnvironmentVariable("SCRIBLISM_STATE_ROOT"));
     private readonly EditorSettings _settings;
     private readonly SemaphoreSlim _dialogGate = new(1, 1);
@@ -35,7 +36,7 @@ public sealed partial class MainWindow : Window
         Notice.Translation = new System.Numerics.Vector3(0, 0, 24);
         SystemBackdrop = new MicaBackdrop();
         ExtendsContentIntoTitleBar = true;
-        AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
+        AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Standard;
         SetTitleBar(TitleBarDragArea);
         AppWindow.Changed += (_, _) => UpdateCaptionInset();
         Root.Loaded += (_, _) =>
@@ -56,6 +57,7 @@ public sealed partial class MainWindow : Window
         WrapMenu.IsChecked = _settings.WordWrap;
         HiddenMenu.IsChecked = _settings.ShowHidden;
         SetSidebar();
+        SyncSettingsControls();
         _recoveryTimer = DispatcherQueue.CreateTimer();
         _recoveryTimer.Interval = TimeSpan.FromSeconds(2); _recoveryTimer.IsRepeating = false;
         _recoveryTimer.Tick += async (_, _) => await WriteRecovery();
@@ -107,7 +109,7 @@ public sealed partial class MainWindow : Window
         document.Error = message => ShowNotice("編輯器", message, InfoBarSeverity.Warning);
         document.Changed = OnDocumentChanged;
         document.SelectionMoved = doc => { if (doc == Current) { UpdateStatus(); RefreshOutline(); } };
-        document.ApplySettings(_settings.FontSize, _settings.WordWrap);
+        document.ApplySettings(_settings.FontSize, _settings.WordWrap, _settings.SourceFonts, _settings.MarkdownFonts);
         _documents.Add(document); Tabs.TabItems.Add(document.Tab); Tabs.SelectedItem = document.Tab;
         UpdateDocumentUi(); document.Focus();
     }
@@ -120,7 +122,12 @@ public sealed partial class MainWindow : Window
     {
         if (LanguageButton is null) return;
         var doc = Current;
-        if (!ReferenceEquals(DocumentHost.Content, doc?.View)) DocumentHost.Content = doc?.View;
+        var showingSettings = ReferenceEquals(Tabs.SelectedItem, _settingsTab) && _settingsTab is not null;
+        SettingsPage.Visibility = showingSettings ? Visibility.Visible : Visibility.Collapsed;
+        DocumentHost.Visibility = showingSettings ? Visibility.Collapsed : Visibility.Visible;
+        StatusBar.Visibility = showingSettings ? Visibility.Collapsed : Visibility.Visible;
+        if (showingSettings) FindPanel.Visibility = Visibility.Collapsed;
+        if (!showingSettings && !ReferenceEquals(DocumentHost.Content, doc?.View)) DocumentHost.Content = doc?.View;
         LanguageButton.Content = doc?.Language.Name ?? "純文字";
         foreach (var item in LanguageMenu.Items.OfType<ToggleMenuFlyoutItem>()) item.IsChecked = ReferenceEquals(item.Tag, doc?.Language);
         MarkdownMode.Visibility = doc?.IsMarkdown == true ? Visibility.Visible : Visibility.Collapsed;
@@ -134,11 +141,10 @@ public sealed partial class MainWindow : Window
     {
         var doc = Current; if (doc is null) return;
         var position = doc.SelectionEnd; var text = doc.Buffer.Text;
-        var line = 1; var last = -1;
-        for (var i = 0; i < position; i++) if (text[i] == '\n') { line++; last = i; }
+        var (line, column) = doc.GetLineColumn(position);
         var selected = doc.SelectionEnd - doc.SelectionStart;
-        PositionStatus.Text = $"行 {line:N0}，欄 {position - last:N0}" + (selected > 0 ? $" · 已選 {selected:N0}" : "");
-        PathStatus.Text = (doc.Path ?? doc.Name) + (text.Length > SyntaxHighlighter.MaximumHighlightLength ? " · 大型文件：停用高亮" : "");
+        PositionStatus.Text = $"行 {line:N0}，欄 {column:N0}" + (selected > 0 ? $" · 已選 {selected:N0}" : "");
+        PathStatus.Text = (doc.Path ?? doc.Name) + (text.Length > SyntaxHighlighter.MaximumHighlightLength ? " · 大型文件：停用高亮與自動換行" : "");
         ToolTipService.SetToolTip(PathStatus, doc.Path ?? doc.Name);
         EncodingStatus.Text = doc.EncodingName.ToUpperInvariant() + (doc.Bom ? " BOM" : "") + " · " + (doc.NewLine == "\r\n" ? "CRLF" : doc.NewLine == "\r" ? "CR" : "LF");
         Title = $"{(doc.Buffer.IsDirty ? "• " : "")}{doc.Name} — Scriblism";
@@ -154,7 +160,7 @@ public sealed partial class MainWindow : Window
     private async void OnTabChanged(object sender, SelectionChangedEventArgs e)
     {
         UpdateDocumentUi();
-        await ShowFolderForDocument(Current);
+        if (Current is { } document) await ShowFolderForDocument(document);
     }
     private void OnLanguageChanged(object sender, RoutedEventArgs e)
     {
@@ -178,7 +184,12 @@ public sealed partial class MainWindow : Window
     private void UpdateResponsiveLayout()
     {
         if (SidebarColumn is null) return;
-        if (_settings.SidebarVisible) SidebarColumn.Width = new GridLength(Root.ActualWidth < 780 ? 196 : 248);
+        if (_settings.SidebarVisible)
+        {
+            var available = WorkspaceGrid.ActualWidth > 0 ? WorkspaceGrid.ActualWidth : Root.ActualWidth;
+            var max = Math.Max(140, Math.Min(480, available - 325));
+            SidebarColumn.Width = new GridLength(Math.Min(_settings.SidebarWidth, max));
+        }
         UpdateOverlayBounds();
     }
 
@@ -284,8 +295,16 @@ public sealed partial class MainWindow : Window
         await WriteRecovery(); UpdateDocumentUi();
     }
     private async void OnTabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args)
-    { if (args.Tab.Tag is EditorSession doc) await CloseDocument(doc); }
-    private async void OnCloseTab(object sender, RoutedEventArgs e) { if (Current is { } doc) await CloseDocument(doc); }
+    {
+        if (ReferenceEquals(args.Tab, _settingsTab))
+            CloseSettingsTab();
+        else if (args.Tab.Tag is EditorSession doc) await CloseDocument(doc);
+    }
+    private async void OnCloseTab(object sender, RoutedEventArgs e)
+    {
+        if (ReferenceEquals(Tabs.SelectedItem, _settingsTab) && _settingsTab is not null) CloseSettingsTab();
+        else if (Current is { } doc) await CloseDocument(doc);
+    }
     private void OnExit(object sender, RoutedEventArgs e) => Close();
     private async void OnWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {

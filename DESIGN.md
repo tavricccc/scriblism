@@ -18,7 +18,7 @@ typography:
     fontSize: "14px"
   body:
     fontFamily: "Segoe UI"
-    fontSize: "15px"
+    fontSize: "13px"
     fontWeight: 400
   heading-one:
     fontFamily: "Segoe UI"
@@ -30,7 +30,7 @@ typography:
     fontWeight: 700
   code:
     fontFamily: "Cascadia Mono, Consolas"
-    fontSize: "15px"
+    fontSize: "13px"
   label:
     fontFamily: "Segoe UI Variable Text, Microsoft JhengHei UI"
     fontSize: "12px"
@@ -41,9 +41,9 @@ spacing:
   control: "8px"
   group: "12px"
   panel: "16px"
-  editor-top: "20px"
-  editor-side: "24px"
-  editor-bottom: "48px"
+  editor-top: "8px"
+  editor-side: "14px"
+  editor-bottom: "20px"
 components:
   find-panel:
     rounded: "{rounded.overlay}"
@@ -55,7 +55,7 @@ components:
     height: "24px"
   line-gutter:
     typography: "{typography.code}"
-    width: "52px"
+    width: "45px"
 ---
 
 # Design System: Scriblism
@@ -80,17 +80,21 @@ The explicit colors above belong to syntax highlighting and code backgrounds. `E
 
 UI controls use the Windows UI stack. Markdown prose uses Segoe UI with the native text engine's fallback for Chinese. Source text uses Cascadia Mono, falling back to Consolas. Fonts are not bundled.
 
-At default zoom, H1 is 1.9× body size, H2 is 1.5× and H3–H6 are 1.18×. All are bold. User zoom scales the document from 10 to 32 DIPs. TOM character sizes are converted to points at 0.75× the DIP size.
+At default zoom, H1 is 1.9× body size, H2 is 1.5× and H3–H6 are 1.18×. All are bold. The display uses 87% of the stored zoom size so existing zoom preferences keep their relative meaning while the whole interface becomes denser. TOM character sizes are converted to points at 0.75× the DIP size.
 
 ## Layout
 
-A 48-DIP extended native title bar contains the only TabView, with native Windows caption buttons reserved at the right. Its empty footer is the native window drag region; double-click maximizes. Caption-button inset follows display scaling. Below it are the compact menu row and workspace. The left sidebar is 248 DIPs wide, reduced to 196 below 780 DIPs of root width; it can be hidden. The selected document is hosted separately in the workspace; there is no second tab strip or formatting toolbar.
+A 42-DIP extended native title bar contains the only TabView, with native Windows caption buttons reserved at the right. Its empty footer is the native window drag region; double-click maximizes. Caption-button inset follows display scaling. Below it are the compact menu row and workspace. The left sidebar starts at 216 DIPs, can be dragged from its right edge between 140 and 480 DIPs, and remembers its width. Its list extends to both edges so the scrollbar stays at the divider. File rows are 29 DIPs high. The selected document is hosted separately in the workspace; there is no second tab strip or formatting toolbar.
 
 The bottom status strip holds path, line/column, encoding, language and (for Markdown) editing mode. Its text actions are small and unfilled.
+
+Settings open as a normal closable tab in the document area, never in the status strip. The page holds ordered fallback font lists for source text and live Markdown separately, plus theme and wrapping controls. An empty file sidebar shows only the open-folder button.
 
 Find/replace is a top-right overlay inside the document workspace. It is at most 500 DIPs wide and constrained to the editor width minus 24. Replacement expands inside that overlay. Notifications sit at the bottom right, at most 400 DIPs wide with 16-DIP margins. Both leave editor bounds unchanged.
 
 Source line numbers use RichEdit's measured line positions, not an independently scrolling text column. Hide them for live Markdown and documents above the highlighting limit.
+
+For files above 256 KiB, disable syntax highlighting, wrapping, line numbers and whole-document formatting. Large-file edits are captured after a short typing pause; save and close flush them immediately. Cache line starts so caret movements do not rescan the whole document.
 
 ## Elevation & Depth
 

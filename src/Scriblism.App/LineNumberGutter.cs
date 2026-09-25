@@ -18,7 +18,7 @@ internal sealed class LineNumberGutter : Canvas
     private ScrollViewer? _scroll;
     public LineNumberGutter(RichEditBox editor, DocumentBuffer buffer)
     {
-        _editor = editor; _buffer = buffer; Width = 52; IsHitTestVisible = false;
+        _editor = editor; _buffer = buffer; Width = 45; IsHitTestVisible = false;
         AutomationProperties.SetAccessibilityView(this, Microsoft.UI.Xaml.Automation.Peers.AccessibilityView.Raw);
         SizeChanged += (_, _) => Refresh();
         _editor.Loaded += (_, _) =>
@@ -64,7 +64,7 @@ internal sealed class LineNumberGutter : Canvas
                 var label = new TextBlock
                 {
                     Text = (line + 1).ToString(), FontFamily = _editor.FontFamily,
-                    FontSize = _editor.FontSize, Width = Width - 12, TextAlignment = TextAlignment.Right,
+                    FontSize = _editor.FontSize, Width = Width - 10, TextAlignment = TextAlignment.Right,
                     Foreground = _editor.Foreground,
                     Opacity = new Windows.UI.ViewManagement.AccessibilitySettings().HighContrast ? 1 : .65
                 };

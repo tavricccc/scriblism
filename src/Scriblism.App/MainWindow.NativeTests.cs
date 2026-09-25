@@ -60,8 +60,8 @@ public sealed partial class MainWindow
             var editorTop = code.Editor.TransformToVisual(Root).TransformPoint(new Windows.Foundation.Point()).Y;
             var languageTop = LanguageButton.TransformToVisual(Root).TransformPoint(new Windows.Foundation.Point()).Y;
             Check("language switch is below the editor, not in a toolbar", languageTop >= editorTop + editorHeight - 1, $"editor bottom {editorTop + editorHeight}, language top {languageTop}");
-            Check("tabs are integrated into the title bar", ExtendsContentIntoTitleBar && Tabs.TransformToVisual(Root).TransformPoint(new Windows.Foundation.Point()).Y == 0 && Tabs.ActualHeight <= 48, $"Tab height {Tabs.ActualHeight}");
-            Check("title bar uses wide equal-width tabs and a new-tab dropdown", Tabs.TabWidthMode == Microsoft.UI.Xaml.Controls.TabViewWidthMode.Equal && code.Tab.MinWidth >= 200 && !Tabs.IsAddTabButtonVisible && NewTabButton.Flyout is Microsoft.UI.Xaml.Controls.MenuFlyout { Items.Count: 4 }, $"Tab minimum {code.Tab.MinWidth}, width mode {Tabs.TabWidthMode}");
+            Check("tabs are integrated into the title bar", ExtendsContentIntoTitleBar && Tabs.TransformToVisual(Root).TransformPoint(new Windows.Foundation.Point()).Y == 0 && Tabs.ActualHeight <= 42, $"Tab height {Tabs.ActualHeight}");
+            Check("title bar uses equal-width tabs and a new-tab dropdown", Tabs.TabWidthMode == Microsoft.UI.Xaml.Controls.TabViewWidthMode.Equal && code.Tab.MinWidth >= 174 && !Tabs.IsAddTabButtonVisible && NewTabButton.Flyout is Microsoft.UI.Xaml.Controls.MenuFlyout { Items.Count: 4 }, $"Tab minimum {code.Tab.MinWidth}, width mode {Tabs.TabWidthMode}");
             Check("document is hosted separately with no second tab strip", ReferenceEquals(DocumentHost.Content, code.View) && code.Tab.Content is null, "Shared workspace hosts selected document");
             Check("caption buttons retain their reserved width", CaptionInset.Width.Value > 0 && Tabs.ActualWidth + CaptionInset.Width.Value <= Root.ActualWidth + 1, $"Inset {CaptionInset.Width.Value}");
             var dragPoint = TitleBarDragArea.TransformToVisual(Root).TransformPoint(new Windows.Foundation.Point(TitleBarDragArea.ActualWidth / 2, TitleBarDragArea.ActualHeight / 2));
@@ -97,6 +97,20 @@ public sealed partial class MainWindow
             Check("native typing undo", !code.Buffer.Text.EndsWith("// native 輸入😀"), code.Buffer.Text);
             code.Redo(); Check("native typing redo", code.ReadNativeText() == code.Buffer.Text, code.ReadNativeText());
             Remove(code);
+            var largeText = string.Concat(Enumerable.Repeat("build output line\n", 18000));
+            var large = new EditorSession("large.log", largeText); AddDocument(large);
+            await Ready(large); await large.FormatAsync();
+            Check("large file skips wrapping and line numbers", large.Editor.TextWrapping == Microsoft.UI.Xaml.TextWrapping.NoWrap &&
+                large.View.Children[0].Visibility == Microsoft.UI.Xaml.Visibility.Collapsed, $"wrap={large.Editor.TextWrapping}");
+            large.Select(largeText.Length, 0);
+            large.Editor.Document.Selection.TypeText("tail");
+            large.CaptureText();
+            Check("large file edit reaches buffer", large.Buffer.Text == largeText + "tail" && large.Buffer.IsDirty, large.Buffer.Text.Length.ToString());
+            Check("large file line index tracks end", large.GetLineColumn(large.Buffer.Text.Length) == (18001, 5),
+                large.GetLineColumn(large.Buffer.Text.Length).ToString());
+            Remove(large);
+            Check("empty sidebar has only open-folder button", FolderEmpty.Children.Count == 1 &&
+                FolderEmpty.Children[0] is Microsoft.UI.Xaml.Controls.Button, FolderEmpty.Children.Count.ToString());
             var temp = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(output))!, "native-files");
             Directory.CreateDirectory(temp);
             var filePath = Path.Combine(temp, "保存測試.md");
@@ -117,6 +131,27 @@ public sealed partial class MainWindow
             Tabs.SelectedItem = savedDoc.Tab;
             for (var attempt = 0; attempt < 20 && !string.Equals(_folder, temp, StringComparison.OrdinalIgnoreCase); attempt++) await Task.Delay(50);
             Check("switching tabs follows the selected file folder", string.Equals(_folder, temp, StringComparison.OrdinalIgnoreCase), _folder ?? "");
+            OnSettings(this, new Microsoft.UI.Xaml.RoutedEventArgs());
+            Check("settings opens as a page", ReferenceEquals(Tabs.SelectedItem, _settingsTab) &&
+                SettingsPage.Visibility == Microsoft.UI.Xaml.Visibility.Visible && StatusBar.Visibility == Microsoft.UI.Xaml.Visibility.Collapsed,
+                $"settings={SettingsPage.Visibility}, status={StatusBar.Visibility}");
+            SourceFontsBox.Text = "Consolas, Cascadia Mono";
+            MarkdownFontsBox.Text = "Segoe UI, Microsoft JhengHei UI";
+            OnApplyFonts(this, new Microsoft.UI.Xaml.RoutedEventArgs());
+            Tabs.SelectedItem = savedDoc.Tab;
+            await savedDoc.FormatAsync();
+            Check("markdown uses its own font list", savedDoc.Editor.FontFamily.Source == "Segoe UI, Microsoft JhengHei UI",
+                savedDoc.Editor.FontFamily.Source);
+            savedDoc.LiveMarkdown = false; await savedDoc.FormatAsync();
+            Check("markdown source uses source font list", savedDoc.Editor.FontFamily.Source == "Consolas, Cascadia Mono",
+                savedDoc.Editor.FontFamily.Source);
+            Check("font change preserves text", savedDoc.ReadNativeText() == savedDoc.Buffer.Text && !savedDoc.Buffer.IsDirty,
+                savedDoc.Buffer.Text);
+            Tabs.SelectedItem = _settingsTab;
+            OnCloseTab(this, new Microsoft.UI.Xaml.RoutedEventArgs());
+            Check("settings tab closes back to document", _settingsTab is null &&
+                SettingsPage.Visibility == Microsoft.UI.Xaml.Visibility.Collapsed && StatusBar.Visibility == Microsoft.UI.Xaml.Visibility.Visible,
+                $"settings={SettingsPage.Visibility}, status={StatusBar.Visibility}");
             Remove(otherDoc);
             Remove(savedDoc);
         }

@@ -35,15 +35,21 @@ internal sealed class EditorSession : IDisposable
     public Action<EditorSession>? SelectionMoved { get; set; }
     public Action<string>? Error { get; set; }
     private readonly Microsoft.UI.Dispatching.DispatcherQueueTimer _formatTimer;
+    private readonly Microsoft.UI.Dispatching.DispatcherQueueTimer _captureTimer;
     private CancellationTokenSource? _formatCancellation;
     private MarkdownLayout? _markdown;
     private bool _programmatic;
     private bool _disposed;
-    private double _fontSize = 16;
+    private const double InterfaceScale = 0.87;
+    private double _fontSize = 15 * InterfaceScale;
     private bool _wrap = true;
+    private string _sourceFonts = EditorSettings.DefaultSourceFonts;
+    private string _markdownFonts = EditorSettings.DefaultMarkdownFonts;
     private readonly AccessibilitySettings _accessibility = new();
     private readonly LineNumberGutter _gutter;
     private string? _largePresentation;
+    private int _lineIndexRevision = -1;
+    private int[] _lineStarts = [0];
     public bool IsMarkdown => Language.Id == "markdown";
     public int SelectionStart => Math.Clamp(Editor.Document.Selection.StartPosition, 0, Buffer.Text.Length);
     public int SelectionEnd => Math.Clamp(Editor.Document.Selection.EndPosition, 0, Buffer.Text.Length);
@@ -57,7 +63,8 @@ internal sealed class EditorSession : IDisposable
             AcceptsReturn = true, IsSpellCheckEnabled = false, IsTextPredictionEnabled = false,
             MaxLength = TextFileStore.MaximumBytes,
             FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = _fontSize,
-            CharacterSpacing = 8, TextWrapping = TextWrapping.Wrap, Padding = new Thickness(16, 10, 16, 24),
+            CharacterSpacing = 8, TextWrapping = text.Length > SyntaxHighlighter.MaximumHighlightLength ? TextWrapping.NoWrap : TextWrapping.Wrap,
+            Padding = new Thickness(14, 8, 14, 20),
             BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(0),
             HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch,
             DisabledFormattingAccelerators = DisabledFormattingAccelerators.All,
@@ -83,13 +90,21 @@ internal sealed class EditorSession : IDisposable
         host.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         host.Children.Add(_gutter); Grid.SetColumn(Editor, 1); host.Children.Add(Editor);
         View = host;
-        Tab = new TabViewItem { Header = name, IconSource = new FontIconSource { Glyph = "\uE8A5" }, Tag = this, MinWidth = 200, MaxWidth = 240, MinHeight = 40 };
+        Tab = new TabViewItem { Header = name, IconSource = new FontIconSource { Glyph = "\uE8A5" }, Tag = this, FontSize = 12, MinWidth = 174, MaxWidth = 208, MinHeight = 35 };
         ToolTipService.SetToolTip(Tab, path ?? name);
         _formatTimer = Editor.DispatcherQueue.CreateTimer();
         _formatTimer.Interval = TimeSpan.FromMilliseconds(220);
         _formatTimer.IsRepeating = false;
         _formatTimer.Tick += async (_, _) => await FormatAsync();
-        Editor.TextChanged += (_, _) => CaptureText();
+        _captureTimer = Editor.DispatcherQueue.CreateTimer();
+        _captureTimer.Interval = TimeSpan.FromMilliseconds(300); _captureTimer.IsRepeating = false;
+        _captureTimer.Tick += (_, _) => CaptureText();
+        Editor.TextChanged += (_, _) =>
+        {
+            if (_programmatic || _disposed || IsComposing) return;
+            if (Buffer.Text.Length <= SyntaxHighlighter.MaximumHighlightLength) CaptureText();
+            else { _captureTimer.Stop(); _captureTimer.Start(); }
+        };
         Editor.SelectionChanged += (_, _) =>
         {
             if (_programmatic || _disposed || IsComposing) return;
@@ -122,11 +137,26 @@ internal sealed class EditorSession : IDisposable
     public void CaptureText()
     {
         if (_programmatic || _disposed || IsComposing) return;
+        _captureTimer.Stop();
         var text = ReadNativeText();
         if (Buffer.Update(text, Math.Clamp(Editor.Document.Selection.EndPosition, 0, text.Length)))
         {
             RefreshHeader(); _markdown = null; Changed?.Invoke(this); ScheduleFormat();
         }
+    }
+    public (int Line, int Column) GetLineColumn(int position)
+    {
+        if (_lineIndexRevision != Buffer.Revision)
+        {
+            var starts = new List<int> { 0 };
+            var text = Buffer.Text;
+            for (var i = 0; i < text.Length; i++) if (text[i] == '\n') starts.Add(i + 1);
+            _lineStarts = starts.ToArray(); _lineIndexRevision = Buffer.Revision;
+        }
+        position = Math.Clamp(position, 0, Buffer.Text.Length);
+        var index = Array.BinarySearch(_lineStarts, position);
+        if (index < 0) index = ~index - 1;
+        return (index + 1, position - _lineStarts[index] + 1);
     }
     public void RefreshHeader()
     {
@@ -134,11 +164,15 @@ internal sealed class EditorSession : IDisposable
         AutomationProperties.SetName(Tab, Name + (Buffer.IsDirty ? "，尚未儲存" : ""));
         ToolTipService.SetToolTip(Tab, Path ?? Name);
     }
-    public void ApplySettings(double fontSize, bool wrap)
+    public void ApplySettings(double fontSize, bool wrap, string sourceFonts, string markdownFonts)
     {
-        _fontSize = Math.Clamp(fontSize, 10, 32); _wrap = wrap;
+        _fontSize = Math.Clamp(fontSize, 10, 32) * InterfaceScale; _wrap = wrap;
+        _sourceFonts = EditorSettings.NormalizeFonts(sourceFonts, EditorSettings.DefaultSourceFonts);
+        _markdownFonts = EditorSettings.NormalizeFonts(markdownFonts, EditorSettings.DefaultMarkdownFonts);
         Editor.FontSize = _fontSize;
-        Editor.TextWrapping = IsMarkdown && LiveMarkdown || wrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
+        Editor.FontFamily = new FontFamily(IsMarkdown && LiveMarkdown ? _markdownFonts : _sourceFonts);
+        Editor.TextWrapping = Buffer.Text.Length <= SyntaxHighlighter.MaximumHighlightLength && (IsMarkdown && LiveMarkdown || wrap)
+            ? TextWrapping.Wrap : TextWrapping.NoWrap;
         ScheduleFormat();
     }
     public void ScheduleFormat()
@@ -152,9 +186,15 @@ internal sealed class EditorSession : IDisposable
         if (_disposed || IsComposing) return;
         _formatTimer.Stop();
         _formatCancellation?.Cancel(); _formatCancellation?.Dispose();
+        if (Buffer.Text.Length > SyntaxHighlighter.MaximumHighlightLength)
+        {
+            _gutter.Visibility = Visibility.Collapsed;
+            Editor.TextWrapping = TextWrapping.NoWrap;
+            return;
+        }
         _formatCancellation = new(); var cancellation = _formatCancellation.Token;
         var text = Buffer.Text; var revision = Buffer.Revision; var language = Language;
-        var presentationKey = $"{language.Id}:{LiveMarkdown}:{_fontSize}:{_wrap}:{Editor.ActualTheme}:{_accessibility.HighContrast}";
+        var presentationKey = $"{language.Id}:{LiveMarkdown}:{_fontSize}:{_wrap}:{_sourceFonts}:{_markdownFonts}:{Editor.ActualTheme}:{_accessibility.HighContrast}";
         if (text.Length > SyntaxHighlighter.MaximumHighlightLength && _largePresentation == presentationKey) return;
         _largePresentation = text.Length > SyntaxHighlighter.MaximumHighlightLength ? presentationKey : null;
         try
@@ -182,16 +222,16 @@ internal sealed class EditorSession : IDisposable
         try
         {
             _gutter.Visibility = source && text.Length <= SyntaxHighlighter.MaximumHighlightLength ? Visibility.Visible : Visibility.Collapsed;
-            Editor.Padding = source ? new Thickness(8, 10, 16, 24) : new Thickness(16, 10, 16, 24);
+            Editor.Padding = source ? new Thickness(7, 8, 14, 20) : new Thickness(14, 8, 14, 20);
             Editor.TextWrapping = !source || _wrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
-            Editor.FontFamily = new FontFamily(source ? "Cascadia Mono, Consolas" : "Segoe UI Variable Text, Microsoft JhengHei UI");
+            Editor.FontFamily = new FontFamily(source ? _sourceFonts : _markdownFonts);
             document.DefaultTabStop = (float)(_fontSize * .6 * 4 * .75);
             var range = document.GetRange(0, text.Length);
             var format = range.CharacterFormat;
             format.Hidden = FormatEffect.Off; format.Bold = FormatEffect.Off; format.Italic = FormatEffect.Off;
             format.Strikethrough = FormatEffect.Off; format.Underline = UnderlineType.None;
             format.Size = (float)(_fontSize * 0.75); // TOM sizes are points; WinUI FontSize is DIPs.
-            format.Name = source ? "Cascadia Mono" : "Segoe UI";
+            format.Name = (source ? _sourceFonts : _markdownFonts).Split(',')[0].Trim();
             format.Spacing = source ? 0 : 0.1f;
             format.ForegroundColor = foreground;
             format.BackgroundColor = Colors.Transparent;
@@ -211,7 +251,7 @@ internal sealed class EditorSession : IDisposable
                         case MarkdownStyle.Italic: f.Italic = FormatEffect.On; break;
                         case MarkdownStyle.Strike: f.Strikethrough = FormatEffect.On; break;
                         case MarkdownStyle.Code:
-                            f.Name = "Cascadia Mono";
+                            f.Name = _sourceFonts.Split(',')[0].Trim();
                             if (!highContrast) { f.BackgroundColor = dark ? ColorOf(0x292D33) : ColorOf(0xEDF1F5); f.ForegroundColor = dark ? ColorOf(0xD7BA7D) : ColorOf(0x795E26); }
                             break;
                         case MarkdownStyle.Quote:
@@ -396,5 +436,5 @@ internal sealed class EditorSession : IDisposable
         }
     }
     public RecoveryDocument Recovery() => new(Path, Name, Buffer.Text, Language.Id, EncodingName, Bom, NewLine, ExpectedHash);
-    public void Dispose() { _disposed = true; _formatTimer.Stop(); _formatCancellation?.Cancel(); _formatCancellation?.Dispose(); Changed = null; SelectionMoved = null; }
+    public void Dispose() { _disposed = true; _formatTimer.Stop(); _captureTimer.Stop(); _formatCancellation?.Cancel(); _formatCancellation?.Dispose(); Changed = null; SelectionMoved = null; }
 }

@@ -19,8 +19,15 @@ public sealed class WorkspaceTests : IDisposable
     public void InvalidNamesAreRefused(string name) => Assert.Throws<IOException>(() => Workspace.ChildPath(_root, name));
     [Fact] public async Task SettingsRoundTrip()
     {
-        var store = new LocalStateStore(_root); var settings = new EditorSettings { Theme = "Dark", FontSize = 17, RecentFiles = ["a.cs"] };
+        var store = new LocalStateStore(_root); var settings = new EditorSettings { Theme = "Dark", FontSize = 17,
+            SourceFonts = "Consolas, Cascadia Mono", MarkdownFonts = "Segoe UI, Microsoft JhengHei UI", RecentFiles = ["a.cs"] };
         await store.SaveSettingsAsync(settings); var loaded = store.LoadSettings(); Assert.Equal("Dark", loaded.Theme); Assert.Equal(17, loaded.FontSize); Assert.Single(loaded.RecentFiles);
+        Assert.Equal(settings.SourceFonts, loaded.SourceFonts); Assert.Equal(settings.MarkdownFonts, loaded.MarkdownFonts);
+    }
+    [Fact] public void FontListsKeepOrderAndRemoveInvalidEntries()
+    {
+        Assert.Equal("Consolas, Cascadia Mono", EditorSettings.NormalizeFonts(" Consolas, , Consolas, Cascadia Mono ", EditorSettings.DefaultSourceFonts));
+        Assert.Equal(EditorSettings.DefaultSourceFonts, EditorSettings.NormalizeFonts("\n", EditorSettings.DefaultSourceFonts));
     }
     [Fact] public void CorruptSettingsUseDefaults()
     { var store = new LocalStateStore(_root); File.WriteAllText(Path.Combine(_root, "settings.json"), "bad json"); Assert.Equal(15, store.LoadSettings().FontSize); }

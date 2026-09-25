@@ -1,6 +1,8 @@
 # Scriblism
 
-原生 WinUI 3 文字、程式碼與 Markdown 編輯器。獨立於 Peeklism，不使用 WebView2、Electron 或外掛系統。
+Scriblism 是 Windows 11 的文字、程式碼與 Markdown 編輯器。可以同時打開多個檔案，用分頁切換；側欄顯示目前資料夾，方便在筆記和專案檔案之間移動。寫 Markdown 時，可在原始碼與即時排版之間切換，並用大綱跳到標題。
+
+編輯程式碼時有語法上色、行號、自動縮排和搜尋取代。未儲存的內容會定期備份，意外關閉後可以選擇復原；如果檔案已被其他程式改動，儲存前會提醒。字體、主題和自動換行可在設定頁調整。
 
 ## 執行
 
@@ -8,7 +10,7 @@ Windows 11 24H2（build 26100）以上、x64。
 
 從 [GitHub Releases](https://github.com/tavricccc/scriblism/releases) 下載 `Scriblism.Setup.exe`，執行即可安裝或更新。本機建置的安裝檔位於 `artifacts/installer/Scriblism.Setup.exe`。這是單一檔案的圖形化安裝程式，會建立開始功能表捷徑，並在 Windows「已安裝的應用程式」登錄解除安裝項目。安裝僅套用至目前使用者，不要求管理員權限；沒有共用 Windows App 執行環境時，可選擇安裝自帶執行環境的版本。
 
-若要免安裝使用，也可開啟 `artifacts/Scriblism-win-x64/Scriblism.exe`，或解壓縮 `artifacts/Scriblism-0.1.0-win-x64.zip`。可攜版必須保留整個資料夾，不能只複製 EXE。
+若要免安裝使用，也可開啟 `artifacts/Scriblism-win-x64/Scriblism.exe`，或解壓縮對應版本的 `artifacts/Scriblism-<版本>-win-x64.zip`。可攜版必須保留整個資料夾，不能只複製 EXE。
 
 ```powershell
 .\Scriblism.exe
@@ -23,7 +25,7 @@ Windows 11 24H2（build 26100）以上、x64。
 ## 已實作
 
 - Windows Terminal 式標題列：WinUI 原生分頁直接整合進標題列，內容區不重複放分頁。支援拖曳排序、未儲存標記及關閉前確認；標題列空白處可拖曳視窗、雙擊最大化，右上角保留 Windows 原生視窗按鈕。
-- 開啟檔案／資料夾、拖放、最近開啟；側欄跟隨目前文件所在的資料夾，並支援延遲展開、新增檔案與資料夾、顯示隱藏檔、複製路徑及在 Explorer 顯示。
+- 開啟檔案／資料夾、拖放、最近開啟；側欄跟隨目前文件所在的資料夾，可拖曳右側分隔線調整寬度，並支援延遲展開、新增檔案與資料夾、顯示隱藏檔、複製路徑及在 Explorer 顯示。
 - 33 種語言／格式選項，含 C#、C/C++、JavaScript、TypeScript、Python、Java、Kotlin、Swift、Go、Rust、Ruby、PHP、PowerShell、Shell、SQL、HTML、XML/XAML、CSS、JSON、YAML、TOML、Lua、R、Dart、Scala、F#、Dockerfile、Makefile、Batch、Diff、GraphQL，以及 Markdown 和純文字。
 - 原生程式碼高亮、來源模式行號、自動縮排、文字縮放、自動換行。
 - Markdown 即時排版與原始碼切換；標題、粗斜體、刪除線、連結、引用、行內／圍欄程式碼。游標所在行顯示語法標記，離開後隱藏支援的行內標記。編輯選單可插入 Markdown 格式；大綱可跳到標題。語言與排版模式切換放在狀態列，不佔上方工具列。
@@ -33,6 +35,7 @@ Windows 11 24H2（build 26100）以上、x64。
 - 保留 UTF-8、帶 BOM 的 UTF-16／32、LF／CRLF／CR。先寫同資料夾暫存檔，再替換原檔；儲存前比對磁碟內容雜湊，不直接截斷原檔。
 - 未儲存內容閒置兩秒後備份；異常結束後，下次開啟可選擇復原。備份失敗會提示，不冒充已儲存。
 - 淺色／深色／跟隨 Windows，原生 Mica 視窗、系統選單、焦點與檔案選擇器。
+- 設定頁可從「檢視 → 設定」或 Ctrl+, 開啟。一般／原始碼與 Markdown 即時排版可各自設定多個字體，按順序作為候補；主題與自動換行也可在設定頁調整。
 
 ## 邊界
 
