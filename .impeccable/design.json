@@ -26,6 +26,22 @@
       "heading-one": { "purpose": "1.9x document zoom, bold, same foreground as body" },
       "heading-two": { "purpose": "1.5x document zoom, bold, same foreground as body" },
       "code": { "purpose": "Source editing and visible logical line numbers" }
+    },
+    "website": {
+      "routes": ["/", "/zh/"],
+      "source": "styles.css",
+      "palette": {
+        "pageLight": "#f5f7fa",
+        "pageDark": "#151b23",
+        "surfaceLight": "#eaf0f7",
+        "surfaceDark": "#202a35",
+        "textLight": "#172536",
+        "textDark": "#f1f5fa",
+        "accentLight": "#005db8",
+        "accentDark": "#80bfff"
+      },
+      "radius": "8px",
+      "heroAsset": "Labelled HTML illustration of the current documented WinUI layout; not a product screenshot"
     }
   },
   "components": [

@@ -12,6 +12,16 @@ colors:
   type-dark: "#65D8C3"
   code-ground-light: "#EDF1F5"
   code-ground-dark: "#292D33"
+website:
+  page-light: "#f5f7fa"
+  page-dark: "#151b23"
+  surface-light: "#eaf0f7"
+  surface-dark: "#202a35"
+  text-light: "#172536"
+  text-dark: "#f1f5fa"
+  accent-light: "#005db8"
+  accent-dark: "#80bfff"
+  radius: "8px"
 typography:
   ui:
     fontFamily: "Segoe UI Variable Text, Microsoft JhengHei UI"
@@ -125,3 +135,9 @@ Floating surfaces have eight-DIP corners. The editor itself has zero border thic
 - Don't hide unsaved or conflict decisions in auto-dismissed notifications.
 - Don't build a web surface or plug-in marketplace into this editor.
 - Don't redraw Windows caption buttons or duplicate the title-bar tabs inside the workspace.
+
+## Public website
+
+The static site at `/` and `/zh/` introduces the Windows editor and sends visitors to GitHub Releases. It uses the app icon, Segoe UI and the app's blue accent within a restrained light and dark palette. The CSS variables in `styles.css` implement the web tokens above; the existing WinUI tokens continue to govern the desktop app.
+
+The hero's editor specimen is an HTML illustration of the documented layout and is labelled as such in both languages. It is not a product screenshot. The specimen shows tabs in the title bar, a file sidebar, a document surface and a status strip. Website controls use eight-pixel corners and visible keyboard focus.
